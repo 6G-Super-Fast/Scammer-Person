@@ -201,28 +201,14 @@
         
         const myRepo = "6G-Super-Fast/Scammer-Person"; 
         
-        // Default fallback data agar localStorage ya network na chale
-        let defaultData = [
-            {
-                "s_no": "1",
-                "image": "https://via.placeholder.com/300x220?text=Fraud+Alert+1",
-                "whatsapp": "https://wa.me/"
-            }
-        ];
-
         let fraudArray = [];
+        let fileSha = "";
         let editIndex = null; 
         let base64Image = "";
 
         // Check login state on page load
         window.addEventListener('DOMContentLoaded', () => {
-            const cached = localStorage.getItem('cachedScammerArray');
-            if (cached) {
-                fraudArray = JSON.parse(cached);
-            } else {
-                fraudArray = defaultData;
-                localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-            }
+            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
 
             if (localStorage.getItem('isScammerAdminLoggedIn') === 'true') {
                 document.getElementById('loginSection').style.display = 'none';
@@ -253,16 +239,14 @@
                 });
                 if(response.ok) {
                     const data = await response.json();
+                    fileSha = data.sha;
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    const netArray = JSON.parse(decodedData);
-                    if(netArray && netArray.length > 0) {
-                        fraudArray = netArray;
-                        localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-                        autoSuggestSNo();
-                    }
+                    fraudArray = JSON.parse(decodedData);
+                    localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+                    autoSuggestSNo();
                 }
             } catch (error) {
-                console.log("Using offline cache fallback.");
+                console.log("Background sync fallback active.");
             }
         }
 
@@ -277,18 +261,16 @@
                 
                 if(response.ok) {
                     const data = await response.json();
+                    fileSha = data.sha;
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    const netArray = JSON.parse(decodedData);
-                    if(netArray && netArray.length > 0) {
-                        fraudArray = netArray;
-                    }
+                    fraudArray = JSON.parse(decodedData);
                 }
             } catch (error) {
-                console.log("Offline mode active.");
+                console.log("Using cached data.");
             }
             
             if(!fraudArray || fraudArray.length === 0) {
-                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(defaultData));
+                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
             }
 
             localStorage.setItem('isScammerAdminLoggedIn', 'true');
@@ -302,6 +284,7 @@
 
         function logoutAdmin() {
             localStorage.removeItem('isScammerAdminLoggedIn');
+            localStorage.removeItem('cachedScammerArray');
             document.getElementById('editorSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
             document.querySelector('#loginSection .btn-green').innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
@@ -379,12 +362,31 @@
             }, 2000);
         }
 
-        function renderFraudList() {
+        async function renderFraudList() {
             const container = document.getElementById('fraudListContainer');
-            container.innerHTML = "";
+            container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading records...</div>';
             
-            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(fraudArray));
+            // Sabse pehle GitHub se fresh data fetch karne ki koshish karega taaki saari entries show ho
+            try {
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
+                    headers: { 'Authorization': `token ${GIT_TOKEN}` }
+                });
+                if(response.ok) {
+                    const data = await response.json();
+                    fileSha = data.sha;
+                    const decodedData = decodeURIComponent(escape(atob(data.content)));
+                    fraudArray = JSON.parse(decodedData);
+                    localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+                }
+            } catch (err) {
+                console.log("Using local cache list.");
+            }
 
+            if (!fraudArray || fraudArray.length === 0) {
+                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+            }
+
+            container.innerHTML = "";
             if (!fraudArray || fraudArray.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 30px;">No records found.</div>';
                 return;
@@ -440,13 +442,15 @@
             uploadBtn.style.background = "#d29922";
 
             try {
-                let currentSha = "";
-                const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
-                    headers: { 'Authorization': `token ${GIT_TOKEN}` }
-                });
-                if (getRes.ok) {
-                    const fileData = await getRes.json();
-                    currentSha = fileData.sha;
+                let currentSha = fileSha;
+                if (!currentSha) {
+                    const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
+                        headers: { 'Authorization': `token ${GIT_TOKEN}` }
+                    });
+                    if (getRes.ok) {
+                        const fileData = await getRes.json();
+                        currentSha = fileData.sha;
+                    }
                 }
 
                 const updatedJson = JSON.stringify(fraudArray, null, 2);
@@ -463,6 +467,8 @@
                 });
 
                 if(response.ok) {
+                    const data = await response.json();
+                    fileSha = data.content.sha;
                     uploadBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> UPLOAD DONE ✅";
                     uploadBtn.style.background = "#00ea77";
                     uploadBtn.style.color = "#000";
