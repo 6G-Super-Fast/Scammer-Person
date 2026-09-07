@@ -152,10 +152,10 @@
         <input type="text" id="sNoInput" class="input-pro" placeholder="S. No. (e.g. 1)">
         <input type="url" id="whatsappInput" class="input-pro" placeholder="WhatsApp URL (https://wa.me/...)">
         
-        <!-- File Upload Box -->
-        <div class="file-upload-box">
+        <!-- File Upload Box (Supports Manual + Ctrl+V Paste) -->
+        <div class="file-upload-box" id="dropZone">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: #00d4ff; margin-bottom: 5px;"></i>
-            <div id="uploadText" style="font-size: 13px; color: #8b949e;">Click or browse screenshot image</div>
+            <div id="uploadText" style="font-size: 13px; color: #8b949e;">Upload Photo Manual + Ctrl + V</div>
             <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
             <img id="imagePreview" class="preview-img" alt="Preview">
         </div>
@@ -213,6 +213,20 @@
                 document.getElementById('editorSection').style.display = 'block';
                 loadDataSilent();
             }
+
+            // Global Ctrl + V Clipboard Listener for Images
+            window.addEventListener('paste', (e) => {
+                if(document.getElementById('editorSection').style.display === 'block') {
+                    const items = e.clipboardData.items;
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const blob = items[i].getAsFile();
+                            processImageFile(blob);
+                            break;
+                        }
+                    }
+                }
+            });
         });
 
         async function loadDataSilent() {
@@ -242,7 +256,6 @@
                 });
                 
                 if(!response.ok) {
-                    // Agar data.json nahi hai toh empty array ke sath start karenge
                     fraudArray = [];
                 } else {
                     const data = await response.json();
@@ -273,17 +286,21 @@
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if(file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    base64Image = e.target.result;
-                    document.getElementById('imageUrlInput').value = base64Image;
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = base64Image;
-                    preview.style.display = 'inline-block';
-                    document.getElementById('uploadText').innerText = "Image Loaded Successfully ✅";
-                }
-                reader.readAsDataURL(file);
+                processImageFile(file);
             }
+        }
+
+        function processImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result;
+                document.getElementById('imageUrlInput').value = base64Image;
+                const preview = document.getElementById('imagePreview');
+                preview.src = base64Image;
+                preview.style.display = 'inline-block';
+                document.getElementById('uploadText').innerText = "Image Loaded Successfully ✅";
+            }
+            reader.readAsDataURL(file);
         }
 
         function autoSuggestSNo() {
@@ -319,7 +336,7 @@
             document.getElementById('imageUrlInput').value = "";
             document.getElementById('imagePreview').style.display = 'none';
             document.getElementById('imageInput').value = "";
-            document.getElementById('uploadText').innerText = "Click or browse screenshot image";
+            document.getElementById('uploadText').innerText = "Click to browse OR Paste Screenshot (Ctrl + V)";
             base64Image = "";
 
             localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
@@ -388,7 +405,6 @@
             uploadBtn.style.background = "#d29922";
 
             try {
-                // Step 1: Live SHA fetch karna taaki conflict na ho
                 let currentSha = "";
                 const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
@@ -403,7 +419,6 @@
                 const updatedJson = JSON.stringify(fraudArray, null, 2);
                 const encodedContent = btoa(unescape(encodeURIComponent(updatedJson)));
 
-                // Step 2: GitHub par PUT request bhejna
                 const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GIT_TOKEN}`, 'Content-Type': 'application/json' },
