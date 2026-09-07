@@ -76,7 +76,6 @@
         async function loadData() {
             let fraudData = [];
 
-            // 1. Try fetching from data.json (Online / GitHub / Local Server)
             try {
                 const response = await fetch('data.json?t=' + new Date().getTime());
                 if (response.ok) {
@@ -86,7 +85,6 @@
                 console.log("Network fetch skipped");
             }
 
-            // 2. Fallback to LocalStorage (For offline direct file view)
             if (!fraudData || fraudData.length === 0) {
                 const cached = localStorage.getItem('cachedScammerArray');
                 if (cached) {
