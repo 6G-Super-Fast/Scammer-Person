@@ -152,7 +152,7 @@
         <input type="text" id="sNoInput" class="input-pro" placeholder="S. No. (e.g. 1)">
         <input type="url" id="whatsappInput" class="input-pro" placeholder="WhatsApp URL (https://wa.me/...)">
         
-        <!-- File Upload Box (Supports Manual + Ctrl+V Paste) -->
+        <!-- File Upload Box (Supports Manual + Ctrl+V Paste with ImgBB) -->
         <div class="file-upload-box" id="dropZone">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: #00d4ff; margin-bottom: 5px;"></i>
             <div id="uploadText" style="font-size: 13px; color: #8b949e;">Click to browse OR Paste Screenshot (Ctrl + V)</div>
@@ -171,8 +171,8 @@
             <i class="fa-solid fa-list-check"></i> VIEW DATA LIST & EDIT
         </button>
         
-        <button class="btn-pro btn-blue" onclick="saveToGitHub()">
-            <i class="fa-solid fa-cloud-arrow-up"></i> UPLOAD TO GITHUB
+        <button class="btn-pro btn-blue" onclick="saveToCloud()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> UPLOAD TO SERVER
         </button>
         
         <button class="btn-pro" style="background: #da3633; color: #fff; margin-top: 15px;" onclick="logoutAdmin()">
@@ -193,21 +193,19 @@
 
     <script>
         // ==========================================
-        // GITHUB & TOKEN CONFIGURATION
+        // API & REPOSITORY CONFIGURATION
         // ==========================================
         const TOKEN_PART_1 = "ghp_ib4h4kWYgpi9tp7N"; 
         const TOKEN_PART_2 = "WAmVKpx0IU4Gtk18s8tG"; 
         const GIT_TOKEN = TOKEN_PART_1 + TOKEN_PART_2; 
         
         const myRepo = "6G-Super-Fast/Scammer-Person"; 
+        const IMGBB_API_KEY = "b2a68f570d4e4089f9c45d64c610036";
         
         let fraudArray = [];
         let editIndex = null; 
-        let base64Image = "";
 
-        // Check login state on page load
         window.addEventListener('DOMContentLoaded', () => {
-            // Sabse pehle local storage se load karein taaki turant data mil jaye
             fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
 
             if (localStorage.getItem('isScammerAdminLoggedIn') === 'true') {
@@ -224,7 +222,7 @@
                     for (let i = 0; i < items.length; i++) {
                         if (items[i].type.indexOf('image') !== -1) {
                             const blob = items[i].getAsFile();
-                            processImageFile(blob);
+                            uploadToImgBB(blob);
                             break;
                         }
                     }
@@ -240,15 +238,12 @@
                 if(response.ok) {
                     const data = await response.json();
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    const netArray = JSON.parse(decodedData);
-                    if(netArray && netArray.length > 0) {
-                        fraudArray = netArray;
-                        localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-                        autoSuggestSNo();
-                    }
+                    fraudArray = JSON.parse(decodedData);
+                    localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+                    autoSuggestSNo();
                 }
             } catch (error) {
-                console.log("Offline mode active, using local cache.");
+                console.log("Background sync fallback active.");
             }
         }
 
@@ -264,19 +259,16 @@
                 if(response.ok) {
                     const data = await response.json();
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    const netArray = JSON.parse(decodedData);
-                    if(netArray && netArray.length > 0) {
-                        fraudArray = netArray;
-                    }
+                    fraudArray = JSON.parse(decodedData);
                 }
             } catch (error) {
-                console.log("Using cached data due to offline state.");
+                console.log("Offline connection fallback.");
             }
             
-            if(fraudArray.length === 0) {
+            if(!fraudArray || fraudArray.length === 0) {
                 fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
             }
-
+            
             localStorage.setItem('isScammerAdminLoggedIn', 'true');
             localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             
@@ -295,21 +287,38 @@
         function handleImageUpload(event) {
             const file = event.target.files[0];
             if(file) {
-                processImageFile(file);
+                uploadToImgBB(file);
             }
         }
 
-        function processImageFile(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                base64Image = e.target.result;
-                document.getElementById('imageUrlInput').value = base64Image;
-                const preview = document.getElementById('imagePreview');
-                preview.src = base64Image;
-                preview.style.display = 'inline-block';
-                document.getElementById('uploadText').innerText = "Image Loaded Successfully ✅";
+        // ImgBB Upload Functionality
+        async function uploadToImgBB(file) {
+            document.getElementById('uploadText').innerText = "Uploading to Cloud... ⏳";
+            
+            const formData = new FormData();
+            formData.append("image", file);
+
+            try {
+                const res = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+                    method: "POST",
+                    body: formData
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    const imageUrl = data.data.url;
+                    document.getElementById('imageUrlInput').value = imageUrl;
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = imageUrl;
+                    preview.style.display = 'inline-block';
+                    document.getElementById('uploadText').innerText = "Image Uploaded Successfully ✅";
+                } else {
+                    throw new Error("Upload failed");
+                }
+            } catch (err) {
+                document.getElementById('uploadText').innerText = "Upload Failed! Try again ❌";
+                alert("Internal error, try after some time");
             }
-            reader.readAsDataURL(file);
         }
 
         function autoSuggestSNo() {
@@ -327,6 +336,7 @@
             const image = document.getElementById('imageUrlInput').value.trim();
             
             if(!s_no || !whatsapp || !image) { 
+                alert("Please fill all fields and wait for image upload!");
                 return; 
             }
 
@@ -347,7 +357,6 @@
             document.getElementById('imagePreview').style.display = 'none';
             document.getElementById('imageInput').value = "";
             document.getElementById('uploadText').innerText = "Click to browse OR Paste Screenshot (Ctrl + V)";
-            base64Image = "";
 
             localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             autoSuggestSNo();
@@ -367,7 +376,6 @@
             const container = document.getElementById('fraudListContainer');
             container.innerHTML = "";
             
-            // Local storage aur array se latest data load karo taaki list kabhi empty na dikhe
             fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(fraudArray));
 
             if (!fraudArray || fraudArray.length === 0) {
@@ -404,7 +412,6 @@
             preview.src = item.image;
             preview.style.display = 'inline-block';
             document.getElementById('uploadText').innerText = "Image Loaded ✅";
-            base64Image = item.image;
             
             document.getElementById('formTitle').innerHTML = `<i class='fa-solid fa-pen-to-square'></i> Edit Entry #${item.s_no}`;
             document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-check-double'></i> UPDATE ENTRY";
@@ -419,7 +426,7 @@
             autoSuggestSNo();
         }
 
-        async function saveToGitHub() {
+        async function saveToCloud() {
             const uploadBtn = document.querySelector('.btn-blue');
             uploadBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> UPLOADING...";
             uploadBtn.style.background = "#d29922";
@@ -441,7 +448,7 @@
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GIT_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: "Update scammer list via Admin Panel", 
+                        message: "Update entries via Admin Panel", 
                         content: encodedContent, 
                         sha: currentSha ? currentSha : undefined 
                     })
@@ -453,7 +460,7 @@
                     uploadBtn.style.color = "#000";
 
                     setTimeout(() => {
-                        uploadBtn.innerHTML = "<i class='fa-solid fa-cloud-arrow-up'></i> UPLOAD TO GITHUB";
+                        uploadBtn.innerHTML = "<i class='fa-solid fa-cloud-arrow-up'></i> UPLOAD TO SERVER";
                         uploadBtn.style.background = "#1f6feb";
                         uploadBtn.style.color = "#fff";
                     }, 3000);
@@ -464,15 +471,16 @@
             } catch (error) {
                 uploadBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> FAILED ❌";
                 uploadBtn.style.background = "#da3633";
+                alert("Internal error, try after some time");
                 setTimeout(() => {
-                    uploadBtn.innerHTML = "<i class='fa-solid fa-cloud-arrow-up'></i> UPLOAD TO GITHUB";
+                    uploadBtn.innerHTML = "<i class='fa-solid fa-cloud-arrow-up'></i> UPLOAD TO SERVER";
                     uploadBtn.style.background = "#1f6feb";
                 }, 3000);
             }
         }
 
         function openModal() { document.getElementById('listModal').style.display = 'flex'; renderFraudList(); }
-        closeModal = function() { document.getElementById('listModal').style.display = 'none'; }
+        function closeModal() { document.getElementById('listModal').style.display = 'none'; }
     </script>
 </body>
 </html>
