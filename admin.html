@@ -207,10 +207,12 @@
 
         // Check login state on page load
         window.addEventListener('DOMContentLoaded', () => {
+            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+
             if (localStorage.getItem('isScammerAdminLoggedIn') === 'true') {
-                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('editorSection').style.display = 'block';
+                autoSuggestSNo();
                 loadDataSilent();
             }
 
@@ -242,7 +244,7 @@
                     autoSuggestSNo();
                 }
             } catch (error) {
-                console.log("Background sync failed");
+                console.log("Background sync fallback active.");
             }
         }
 
@@ -255,28 +257,29 @@
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
                 
-                if(!response.ok) {
-                    fraudArray = [];
-                } else {
+                if(response.ok) {
                     const data = await response.json();
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
                     fraudArray = JSON.parse(decodedData);
                 }
-                
-                localStorage.setItem('isScammerAdminLoggedIn', 'true');
-                localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-                
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('editorSection').style.display = 'block';
-                autoSuggestSNo();
             } catch (error) {
-                loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
+                console.log("Offline connection fallback.");
             }
+            
+            if(!fraudArray || fraudArray.length === 0) {
+                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+            }
+            
+            localStorage.setItem('isScammerAdminLoggedIn', 'true');
+            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+            
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('editorSection').style.display = 'block';
+            autoSuggestSNo();
         }
 
         function logoutAdmin() {
             localStorage.removeItem('isScammerAdminLoggedIn');
-            localStorage.removeItem('cachedScammerArray');
             document.getElementById('editorSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
             document.querySelector('#loginSection .btn-green').innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
@@ -317,6 +320,7 @@
             const image = document.getElementById('imageUrlInput').value.trim();
             
             if(!s_no || !whatsapp || !image) { 
+                alert("Please fill all fields and add an image!");
                 return; 
             }
 
@@ -342,7 +346,6 @@
             localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             autoSuggestSNo();
 
-            // Button feedback without alert popup
             actionBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> ADDED LOCALLY ✅";
             actionBtn.style.background = "#00ea77";
             actionBtn.style.color = "#000";
@@ -358,7 +361,9 @@
             const container = document.getElementById('fraudListContainer');
             container.innerHTML = "";
             
-            if(fraudArray.length === 0) {
+            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(fraudArray));
+
+            if (!fraudArray || fraudArray.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 30px;">No records found.</div>';
                 return;
             }
@@ -460,7 +465,7 @@
         }
 
         function openModal() { document.getElementById('listModal').style.display = 'flex'; renderFraudList(); }
-        closeModal = function() { document.getElementById('listModal').style.display = 'none'; }
+        function closeModal() { document.getElementById('listModal').style.display = 'none'; }
     </script>
 </body>
 </html>
