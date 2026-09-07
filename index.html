@@ -74,20 +74,33 @@
 
     <script>
         async function loadData() {
+            let fraudData = [];
+
+            // 1. Try fetching from data.json (Online / GitHub / Local Server)
             try {
                 const response = await fetch('data.json?t=' + new Date().getTime());
-                if (!response.ok) throw new Error("Failed to load");
-                const fraudData = await response.json();
-                renderCards(fraudData);
-            } catch (error) {
-                document.getElementById('fraudGrid').innerHTML = `<div class="no-data">No records found. Please add entries from Admin Panel.</div>`;
+                if (response.ok) {
+                    fraudData = await response.json();
+                }
+            } catch (e) {
+                console.log("Network fetch skipped");
             }
+
+            // 2. Fallback to LocalStorage (For offline direct file view)
+            if (!fraudData || fraudData.length === 0) {
+                const cached = localStorage.getItem('cachedScammerArray');
+                if (cached) {
+                    fraudData = JSON.parse(cached);
+                }
+            }
+
+            renderCards(fraudData);
         }
 
         function renderCards(data) {
             const grid = document.getElementById('fraudGrid');
             if (!data || data.length === 0) {
-                grid.innerHTML = `<div class="no-data">No fraud entries available.</div>`;
+                grid.innerHTML = `<div class="no-data">No records found. Please add entries from Admin Panel.</div>`;
                 return;
             }
 
