@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Pro Admin Dashboard ⚡</title>
+    <title>Scammer Person - Admin Dashboard ⚡</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
@@ -61,6 +61,24 @@
             outline: none; 
         }
 
+        .file-upload-box {
+            position: relative;
+            background: #010409;
+            border: 1px dashed #30363d;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .file-upload-box:hover { border-color: #00d4ff; background: #080d16; }
+        .file-upload-box input[type="file"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; cursor: pointer;
+        }
+        .preview-img { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-top: 10px; display: none; border: 1px solid #00ea77; }
+
         .btn-pro { 
             display: flex; align-items: center; justify-content: center; gap: 10px;
             width: 100%; padding: 15px; margin-bottom: 15px;
@@ -75,9 +93,6 @@
         
         .btn-yellow { background: #d29922; color: #fff; box-shadow: 0 4px 15px rgba(210, 153, 34, 0.2); }
         .btn-yellow:hover { background: #e3b341; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(210, 153, 34, 0.4); }
-        
-        .btn-purple { background: #8957e5; color: #fff; box-shadow: 0 4px 15px rgba(137, 87, 229, 0.2); }
-        .btn-purple:hover { background: #9a6bfa; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(137, 87, 229, 0.4); }
         
         .btn-blue { background: #1f6feb; color: #fff; box-shadow: 0 4px 15px rgba(31, 111, 235, 0.2); margin-bottom: 0;}
         .btn-blue:hover { background: #388bfd; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(31, 111, 235, 0.4); }
@@ -95,27 +110,22 @@
             display: flex; justify-content: space-between; align-items: center; 
             margin-bottom: 12px; padding: 15px; 
             background: #0d1117; border-radius: 10px; border: 1px solid #30363d; 
-            text-align: left; cursor: grab; transition: 0.3s ease;
+            text-align: left; transition: 0.3s ease;
         }
         .list-item:hover { border-color: #8b949e; background: #161b22; }
-        .list-item:active { cursor: grabbing; }
-        .list-item.dragging { opacity: 0.4; background: #21262d; border: 1px dashed #00ea77; }
-        .list-item.drag-over { border-top: 3px solid #00d4ff; transform: scale(1.02); }
-        .drag-icon { margin-right: 15px; color: #8b949e; font-size: 16px; display: flex; align-items: center; }
-        .icon-preview { width: 35px; height: 35px; object-fit: contain; margin-right: 12px; border-radius: 6px; background: #fff; padding: 2px;}
+        .icon-preview { width: 45px; height: 45px; object-fit: cover; margin-right: 12px; border-radius: 6px; border: 1px solid #30363d;}
 
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
-        .modal-content { background: #161b22; padding: 30px; border-radius: 16px; border: 1px solid #00d4ff; width: 90%; max-width: 650px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 15px 50px rgba(0,0,0,0.6); animation: popIn 0.3s ease-out; }
-        .full-page-modal { max-width: 95%; height: 95vh; width: 1200px; }
+        .modal-content { background: #161b22; padding: 30px; border-radius: 16px; border: 1px solid #00d4ff; width: 90%; max-width: 700px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 15px 50px rgba(0,0,0,0.6); animation: popIn 0.3s ease-out; }
         
         @keyframes popIn { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 15px; margin-bottom: 20px; }
-        .modal-header h3 { margin: 0; color: #fff; font-size: 22px; display: flex; align-items: center; gap: 10px;}
+        .modal-header h3 { margin: 0; color: #fff; font-size: 20px; display: flex; align-items: center; gap: 10px;}
         .close-btn { color: #da3633; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; transition: 0.3s; }
         .close-btn:hover { color: #ff4757; transform: rotate(90deg); }
         
-        #projectList { overflow-y: auto; padding-right: 10px; flex-grow: 1; }
+        #fraudListContainer { overflow-y: auto; padding-right: 10px; flex-grow: 1; }
         ::-webkit-scrollbar { width: 8px; height: 8px;}
         ::-webkit-scrollbar-track { background: #010409; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
@@ -124,35 +134,41 @@
 </head>
 <body>
 
+    <!-- Login Section -->
     <div class="admin-box" id="loginSection">
-        <h2><i class="fa-solid fa-shield-halved"></i> Security Portal</h2>
-        <p class="subtitle">Enter the Admin Dashboard to manage 6G SUPER-FAST</p>
+        <h2><i class="fa-solid fa-shield-halved"></i> Scammer Admin Portal</h2>
+        <p class="subtitle">Secure Control Room for Scammer List</p>
         
         <button class="btn-pro btn-green" style="margin-top: 15px;" onclick="loadData()">
             <i class="fa-solid fa-right-to-bracket"></i> ENTER ADMIN PANEL
         </button>
     </div>
 
+    <!-- Main Editor Section -->
     <div class="admin-box" id="editorSection" style="display:none; padding-top: 30px;">
-        <h3 id="formTitle"><i class="fa-solid fa-fire"></i> Add New Site</h3>
-        <p class="subtitle" style="margin-bottom: 20px;">Fill details to add a new tool card to the grid.</p>
+        <h3 id="formTitle"><i class="fa-solid fa-triangle-exclamation"></i> Add New Scammer Entry</h3>
+        <p class="subtitle" style="margin-bottom: 20px;">Upload screenshot & WhatsApp link for public index.</p>
         
-        <input type="text" id="pName" class="input-pro" placeholder="Tool Ka Naam">
-        <input type="url" id="pLink" class="input-pro" placeholder="Tool URL Link (https://...)">
-        <input type="url" id="pIcon" class="input-pro" placeholder="Icon Image URL (Optional)">
+        <input type="text" id="sNoInput" class="input-pro" placeholder="S. No. (e.g. 1)">
+        <input type="url" id="whatsappInput" class="input-pro" placeholder="WhatsApp URL (https://wa.me/...)">
         
-        <button id="actionBtn" class="btn-pro btn-green" onclick="processTool()">
-            <i class="fa-solid fa-plus"></i> ADD TO LIST
+        <!-- File Upload Box (Supports Manual + Ctrl+V Paste) -->
+        <div class="file-upload-box" id="dropZone">
+            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: #00d4ff; margin-bottom: 5px;"></i>
+            <div id="uploadText" style="font-size: 13px; color: #8b949e;">Click to browse OR Paste Screenshot (Ctrl + V)</div>
+            <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
+            <img id="imagePreview" class="preview-img" alt="Preview">
+        </div>
+        <input type="hidden" id="imageUrlInput">
+        
+        <button id="actionBtn" class="btn-pro btn-green" onclick="processFraudEntry()">
+            <i class="fa-solid fa-plus"></i> ADD ENTRY
         </button>
         
         <hr style="border: none; border-top: 1px solid #30363d; margin: 25px 0;">
 
         <button class="btn-pro btn-yellow" onclick="openModal()">
-            <i class="fa-solid fa-list-check"></i> VIEW SAVED TOOLS
-        </button>
-        
-        <button class="btn-pro btn-purple" onclick="openUserModal()">
-            <i class="fa-solid fa-users"></i> VIEW USER LIST
+            <i class="fa-solid fa-list-check"></i> VIEW DATA LIST & EDIT
         </button>
         
         <button class="btn-pro btn-blue" onclick="saveToGitHub()">
@@ -164,249 +180,274 @@
         </button>
     </div>
 
+    <!-- View Data List Modal -->
     <div id="listModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-bars-staggered"></i> ALL TOOLS LIST</h3>
+                <h3><i class="fa-solid fa-list"></i> ALL SCAMMER RECORDS LIST</h3>
                 <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <p class="subtitle" style="text-align: left; margin-top:-10px;">💡 Drag & Drop to reorder the tools sequence.</p>
-            <div id="projectList"></div>
-        </div>
-    </div>
-
-    <div id="userListModal" class="modal">
-        <div class="modal-content full-page-modal">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-users-gear"></i> REGISTERED USERS DATABASE</h3>
-                <button class="close-btn" onclick="closeUserModal()"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th width="5%">S.NO</th>
-                            <th width="20%">NAME</th>
-                            <th width="15%">MOBILE NO</th>
-                            <th width="30%">EMAIL ID</th>
-                            <th width="15%">PASSWORD</th>
-                            <th width="15%">REG DATE</th>
-                        </tr>
-                    </thead>
-                    <tbody id="userListBody"></tbody>
-                </table>
-            </div>
+            <div id="fraudListContainer"></div>
         </div>
     </div>
 
     <script>
+        // ==========================================
+        // GITHUB & TOKEN CONFIGURATION
+        // ==========================================
         const TOKEN_PART_1 = "ghp_ib4h4kWYgpi9tp7N"; 
         const TOKEN_PART_2 = "WAmVKpx0IU4Gtk18s8tG"; 
         const GIT_TOKEN = TOKEN_PART_1 + TOKEN_PART_2; 
         
-        const myRepo = "6G-SUPER-FAST/Login-Penel";[cite: 1]
+        const myRepo = "6G-Super-Fast/Scammer-Person"; 
         
-        let toolsArray = [];
-        let fileSha = "";
+        let fraudArray = [];
         let editIndex = null; 
-        let dragStartIndex = null; 
+        let base64Image = "";
 
+        // Check login state on page load
         window.addEventListener('DOMContentLoaded', () => {
-            if (localStorage.getItem('isAdminLoggedIn') === 'true') {
-                toolsArray = JSON.parse(localStorage.getItem('cachedToolsArray') || '[]');
-                fileSha = localStorage.getItem('cachedFileSha') || '';
-                
+            // Sabse pehle local storage se load karein taaki turant data mil jaye
+            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+
+            if (localStorage.getItem('isScammerAdminLoggedIn') === 'true') {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('editorSection').style.display = 'block';
-                
-                if(toolsArray.length === 0) {
-                    loadDataSilent();
-                } else {
-                    renderList();
-                }
+                autoSuggestSNo();
+                loadDataSilent();
             }
+
+            // Global Ctrl + V Clipboard Listener for Images
+            window.addEventListener('paste', (e) => {
+                if(document.getElementById('editorSection').style.display === 'block') {
+                    const items = e.clipboardData.items;
+                    for (let i = 0; i < items.length; i++) {
+                        if (items[i].type.indexOf('image') !== -1) {
+                            const blob = items[i].getAsFile();
+                            processImageFile(blob);
+                            break;
+                        }
+                    }
+                }
+            });
         });
 
         async function loadDataSilent() {
             try {
-                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/tools.json`, {
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
                 if(response.ok) {
                     const data = await response.json();
-                    fileSha = data.sha;
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    toolsArray = JSON.parse(decodedData);
-                    localStorage.setItem('cachedFileSha', fileSha);
-                    localStorage.setItem('cachedToolsArray', JSON.stringify(toolsArray));
-                    renderList();
+                    const netArray = JSON.parse(decodedData);
+                    if(netArray && netArray.length > 0) {
+                        fraudArray = netArray;
+                        localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+                        autoSuggestSNo();
+                    }
                 }
             } catch (error) {
-                console.log("Background sync failed");
+                console.log("Offline mode active, using local cache.");
             }
         }
 
         async function loadData() {
             const loginBtn = document.querySelector('#loginSection .btn-green');
-            loginBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> LOADING DATA...";
+            loginBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> CONNECTING...";
 
             try {
-                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/tools.json`, {
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
                 
-                if(!response.ok) throw new Error("Key galat hai!");
-                
-                const data = await response.json();
-                fileSha = data.sha;
-                const decodedData = decodeURIComponent(escape(atob(data.content)));
-                toolsArray = JSON.parse(decodedData);
-                
-                localStorage.setItem('isAdminLoggedIn', 'true');
-                localStorage.setItem('cachedFileSha', fileSha);
-                localStorage.setItem('cachedToolsArray', JSON.stringify(toolsArray));
-                
-                document.getElementById('loginSection').style.display = 'none';
-                document.getElementById('editorSection').style.display = 'block';
-                renderList();
+                if(response.ok) {
+                    const data = await response.json();
+                    const decodedData = decodeURIComponent(escape(atob(data.content)));
+                    const netArray = JSON.parse(decodedData);
+                    if(netArray && netArray.length > 0) {
+                        fraudArray = netArray;
+                    }
+                }
             } catch (error) {
-                alert("Error! Token check karo ya internet connection dekho.");
-                loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
+                console.log("Using cached data due to offline state.");
             }
+            
+            if(fraudArray.length === 0) {
+                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+            }
+
+            localStorage.setItem('isScammerAdminLoggedIn', 'true');
+            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+            
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('editorSection').style.display = 'block';
+            autoSuggestSNo();
         }
 
         function logoutAdmin() {
-            localStorage.removeItem('isAdminLoggedIn');
-            localStorage.removeItem('cachedFileSha');
-            localStorage.removeItem('cachedToolsArray');
+            localStorage.removeItem('isScammerAdminLoggedIn');
             document.getElementById('editorSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
             document.querySelector('#loginSection .btn-green').innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
         }
 
-        function renderList() {
-            const list = document.getElementById('projectList');
-            list.innerHTML = "";
-            let sNo = 1;
-            toolsArray.forEach((tool, index) => {
-                if(!tool.name) return; 
-
-                let iconPreview = '';
-                if(tool.icon && (tool.icon.startsWith('http') || tool.icon.startsWith('data:'))) {
-                    iconPreview = `<img src="${tool.icon}" class="icon-preview" alt="icon">`;
-                } else {
-                    iconPreview = `<span style="font-size: 22px; margin-right: 15px; color:#00ea77;"><i class="fa-solid fa-bolt"></i></span>`;
-                }
-
-                list.innerHTML += `
-                    <div class="list-item" draggable="true" data-index="${index}">
-                        <div style="display: flex; align-items: center; flex: 1; padding-right: 15px;">
-                            <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
-                            ${iconPreview}
-                            <span style="font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif;">
-                                ${sNo++}. ${tool.name.replace(' ⚡', '')}
-                            </span>
-                        </div>
-                        <div class="action-btns">
-                            <button class="btn-edit" onclick="editTool(${index})"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-delete" onclick="deleteTool(${index})"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </div>`;
-            });
-            addDragAndDropListeners();
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if(file) {
+                processImageFile(file);
+            }
         }
 
-        function addDragAndDropListeners() {
-            const draggables = document.querySelectorAll('.list-item');
-            draggables.forEach(draggable => {
-                draggable.addEventListener('dragstart', function(e) { dragStartIndex = +this.getAttribute('data-index'); this.classList.add('dragging'); });
-                draggable.addEventListener('dragover', function(e) { e.preventDefault(); });
-                draggable.addEventListener('dragenter', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
-                draggable.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
-                draggable.addEventListener('drop', function() { this.classList.remove('drag-over'); const dragEndIndex = +this.getAttribute('data-index'); swapItems(dragStartIndex, dragEndIndex); });
-                draggable.addEventListener('dragend', function() { this.classList.remove('dragging'); });
-            });
+        function processImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result;
+                document.getElementById('imageUrlInput').value = base64Image;
+                const preview = document.getElementById('imagePreview');
+                preview.src = base64Image;
+                preview.style.display = 'inline-block';
+                document.getElementById('uploadText').innerText = "Image Loaded Successfully ✅";
+            }
+            reader.readAsDataURL(file);
         }
 
-        function swapItems(fromIndex, toIndex) {
-            const itemToMove = toolsArray.splice(fromIndex, 1)[0];
-            toolsArray.splice(toIndex, 0, itemToMove);
-            localStorage.setItem('cachedToolsArray', JSON.stringify(toolsArray));
-            renderList(); 
+        function autoSuggestSNo() {
+            if(fraudArray.length > 0) {
+                const maxNo = Math.max(...fraudArray.map(item => parseInt(item.s_no) || 0));
+                document.getElementById('sNoInput').value = maxNo + 1;
+            } else {
+                document.getElementById('sNoInput').value = 1;
+            }
         }
 
-        function processTool() {
-            const name = document.getElementById('pName').value.trim();
-            const link = document.getElementById('pLink').value.trim();
-            const icon = document.getElementById('pIcon').value.trim();
+        function processFraudEntry() {
+            const s_no = document.getElementById('sNoInput').value.trim();
+            const whatsapp = document.getElementById('whatsappInput').value.trim();
+            const image = document.getElementById('imageUrlInput').value.trim();
             
-            if(!name || !link) { return alert("Tool ka Naam aur Link dono daalna zaroori hai!"); }
+            if(!s_no || !whatsapp || !image) { 
+                return; 
+            }
+
+            const actionBtn = document.getElementById('actionBtn');
 
             if(editIndex === null) {
-                toolsArray.push({name, url: link, icon});
+                fraudArray.push({ s_no, image, whatsapp });
             } else {
-                toolsArray[editIndex] = {name, url: link, icon};
+                fraudArray[editIndex] = { s_no, image, whatsapp };
                 editIndex = null;
-                document.getElementById('formTitle').innerHTML = "<i class='fa-solid fa-fire'></i> Add New Site";
-                document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-plus'></i> ADD TO LIST";
+                document.getElementById('formTitle').innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> Add New Scammer Entry";
                 document.getElementById('actionBtn').className = "btn-pro btn-green";
             }
 
-            document.getElementById('pName').value = "";
-            document.getElementById('pLink').value = "";
-            document.getElementById('pIcon').value = "";
-            localStorage.setItem('cachedToolsArray', JSON.stringify(toolsArray));
-            renderList();
-            closeModal(); 
+            // Reset form fields
+            document.getElementById('whatsappInput').value = "";
+            document.getElementById('imageUrlInput').value = "";
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('imageInput').value = "";
+            document.getElementById('uploadText').innerText = "Click to browse OR Paste Screenshot (Ctrl + V)";
+            base64Image = "";
+
+            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+            autoSuggestSNo();
+
+            actionBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> ADDED LOCALLY ✅";
+            actionBtn.style.background = "#00ea77";
+            actionBtn.style.color = "#000";
+
+            setTimeout(() => {
+                actionBtn.innerHTML = "<i class='fa-solid fa-plus'></i> ADD ENTRY";
+                actionBtn.style.background = "#00ea77";
+                actionBtn.style.color = "#000";
+            }, 2000);
         }
 
-        function editTool(index) {
-            editIndex = index;
-            document.getElementById('pName').value = toolsArray[index].name || "";
-            document.getElementById('pLink').value = toolsArray[index].url || "";
-            document.getElementById('pIcon').value = toolsArray[index].icon || "";
+        function renderFraudList() {
+            const container = document.getElementById('fraudListContainer');
+            container.innerHTML = "";
             
-            document.getElementById('formTitle').innerHTML = "<i class='fa-solid fa-pen-to-square'></i> Edit Tool";
-            document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-check-double'></i> UPDATE TOOL";
+            // Local storage aur array se latest data load karo taaki list kabhi empty na dikhe
+            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(fraudArray));
+
+            if (!fraudArray || fraudArray.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 30px;">No records found.</div>';
+                return;
+            }
+
+            fraudArray.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="list-item">
+                        <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
+                            <img src="${item.image}" class="icon-preview" alt="Img">
+                            <div>
+                                <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
+                                <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;">${item.whatsapp}</div>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-edit" onclick="editFraud(${index})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-delete" onclick="deleteFraud(${index})"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>`;
+            });
+        }
+
+        function editFraud(index) {
+            editIndex = index;
+            const item = fraudArray[index];
+            document.getElementById('sNoInput').value = item.s_no || "";
+            document.getElementById('whatsappInput').value = item.whatsapp || "";
+            document.getElementById('imageUrlInput').value = item.image || "";
+            
+            const preview = document.getElementById('imagePreview');
+            preview.src = item.image;
+            preview.style.display = 'inline-block';
+            document.getElementById('uploadText').innerText = "Image Loaded ✅";
+            base64Image = item.image;
+            
+            document.getElementById('formTitle').innerHTML = `<i class='fa-solid fa-pen-to-square'></i> Edit Entry #${item.s_no}`;
+            document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-check-double'></i> UPDATE ENTRY";
             document.getElementById('actionBtn').className = "btn-pro btn-yellow";
             closeModal(); 
         }
 
-        function deleteTool(index) {
-            if(confirm("Pakka delete karna hai ye tool?")) {
-                toolsArray.splice(index, 1);
-                if(editIndex === index) {
-                    editIndex = null;
-                    document.getElementById('pName').value = ""; document.getElementById('pLink').value = ""; document.getElementById('pIcon').value = "";
-                    document.getElementById('formTitle').innerHTML = "<i class='fa-solid fa-fire'></i> Add New Site";
-                    document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-plus'></i> ADD TO LIST";
-                    document.getElementById('actionBtn').className = "btn-pro btn-green";
-                }
-                localStorage.setItem('cachedToolsArray', JSON.stringify(toolsArray));
-                renderList();
-            }
+        function deleteFraud(index) {
+            fraudArray.splice(index, 1);
+            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+            renderFraudList();
+            autoSuggestSNo();
         }
 
         async function saveToGitHub() {
-            const updatedJson = JSON.stringify(toolsArray, null, 2);
-            const encodedContent = btoa(unescape(encodeURIComponent(updatedJson)));
             const uploadBtn = document.querySelector('.btn-blue');
-            
-            uploadBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> SAVING TO GITHUB...";
+            uploadBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> UPLOADING...";
             uploadBtn.style.background = "#d29922";
 
             try {
-                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/tools.json`, {[cite: 1]
+                let currentSha = "";
+                const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
+                    headers: { 'Authorization': `token ${GIT_TOKEN}` }
+                });
+                if (getRes.ok) {
+                    const fileData = await getRes.json();
+                    currentSha = fileData.sha;
+                }
+
+                const updatedJson = JSON.stringify(fraudArray, null, 2);
+                const encodedContent = btoa(unescape(encodeURIComponent(updatedJson)));
+
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GIT_TOKEN}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: "Updated tools via Control Room", content: encodedContent, sha: fileSha })
+                    body: JSON.stringify({ 
+                        message: "Update scammer list via Admin Panel", 
+                        content: encodedContent, 
+                        sha: currentSha ? currentSha : undefined 
+                    })
                 });
 
                 if(response.ok) {
-                    const data = await response.json();
-                    fileSha = data.content.sha;
-                    localStorage.setItem('cachedFileSha', fileSha);
-                    
                     uploadBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> UPLOAD DONE ✅";
                     uploadBtn.style.background = "#00ea77";
                     uploadBtn.style.color = "#000";
@@ -417,7 +458,9 @@
                         uploadBtn.style.color = "#fff";
                     }, 3000);
 
-                } else { throw new Error("Save error"); }
+                } else { 
+                    throw new Error("Upload failed"); 
+                }
             } catch (error) {
                 uploadBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> FAILED ❌";
                 uploadBtn.style.background = "#da3633";
@@ -428,39 +471,8 @@
             }
         }
 
-        function openModal() { document.getElementById('listModal').style.display = 'flex'; }
-        function closeModal() { document.getElementById('listModal').style.display = 'none'; }
-        
-        function openUserModal() { document.getElementById('userListModal').style.display = 'flex'; loadUserList(); }
-        function closeUserModal() { document.getElementById('userListModal').style.display = 'none'; }
-
-        function loadUserList() {
-            const tbody = document.getElementById('userListBody');
-            tbody.innerHTML = '';
-            let count = 1;
-
-            toolsArray.forEach(data => {
-                if(data.mobile && data.password) {
-                    const dateStr = data.date || 'N/A';
-                    const emailStr = data.email || 'N/A';
-                    const nameStr = data.userName || 'N/A';
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${count++}</td>
-                            <td style="color: #fff; font-weight: 500;">${nameStr}</td>
-                            <td class="data-highlight"><i class="fa-solid fa-phone" style="font-size:11px; margin-right:5px; color:#8b949e;"></i> ${data.mobile}</td>
-                            <td>${emailStr}</td>
-                            <td class="pass-highlight">${data.password}</td>
-                            <td style="color: #8b949e; font-size:13px;"><i class="fa-regular fa-calendar-days" style="margin-right:4px;"></i> ${dateStr}</td>
-                        </tr>
-                    `;
-                }
-            });
-
-            if(count === 1) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#8b949e; padding:40px; font-size: 16px;"><i class="fa-solid fa-folder-open" style="font-size: 24px; display:block; margin-bottom:10px;"></i> No users registered yet.</td></tr>';
-            }
-        }
+        function openModal() { document.getElementById('listModal').style.display = 'flex'; renderFraudList(); }
+        closeModal = function() { document.getElementById('listModal').style.display = 'none'; }
     </script>
 </body>
 </html>
