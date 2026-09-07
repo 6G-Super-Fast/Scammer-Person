@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Scammer Person - Admin Dashboard ⚡</title>
+    <title>Admin Dashboard ⚡</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
@@ -152,7 +152,7 @@
         <input type="text" id="sNoInput" class="input-pro" placeholder="S. No. (e.g. 1)">
         <input type="url" id="whatsappInput" class="input-pro" placeholder="WhatsApp URL (https://wa.me/...)">
         
-        <!-- File Upload Box (Supports Manual + Ctrl+V Paste with ImgBB) -->
+        <!-- File Upload Box -->
         <div class="file-upload-box" id="dropZone">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: #00d4ff; margin-bottom: 5px;"></i>
             <div id="uploadText" style="font-size: 13px; color: #8b949e;">Click to browse OR Paste Screenshot (Ctrl + V)</div>
@@ -196,9 +196,7 @@
         const TOKEN_PART_2 = "WAmVKpx0IU4Gtk18s8tG"; 
         const GIT_TOKEN = TOKEN_PART_1 + TOKEN_PART_2; 
         
-        // ImgBB API Key set directly without breaking to avoid any syntax issues
         const IMGBB_API_KEY = "b62a68f570d4e4089f9c45d64c610036";
-
         const myRepo = "6G-Super-Fast/Scammer-Person"; 
         
         let fraudArray = [];
@@ -266,8 +264,14 @@
                     throw new Error("Failed");
                 }
             } catch (error) {
-                alert("Internal error, try after some time");
-                loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
+                loginBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> Internal error, try after some time";
+                loginBtn.style.background = "#da3633";
+                loginBtn.style.color = "#fff";
+                setTimeout(() => {
+                    loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
+                    loginBtn.style.background = "#00ea77";
+                    loginBtn.style.color = "#000";
+                }, 3000);
             }
         }
 
@@ -286,7 +290,8 @@
         }
 
         async function uploadToImgBB(file) {
-            document.getElementById('uploadText').innerText = "Uploading to Cloud... ⏳";
+            const uploadText = document.getElementById('uploadText');
+            uploadText.innerText = "Uploading to Cloud... ⏳";
             
             const formData = new FormData();
             formData.append("image", file);
@@ -304,13 +309,12 @@
                     const preview = document.getElementById('imagePreview');
                     preview.src = imageUrl;
                     preview.style.display = 'inline-block';
-                    document.getElementById('uploadText').innerText = "Image Uploaded Successfully ✅";
+                    uploadText.innerText = "Image Uploaded Successfully ✅";
                 } else {
                     throw new Error("Upload failed");
                 }
             } catch (err) {
-                document.getElementById('uploadText').innerText = "Upload Failed! Try again ❌";
-                alert("Internal error, try after some time");
+                uploadText.innerText = "Internal error, try after some time ❌";
             }
         }
 
@@ -327,13 +331,18 @@
             const s_no = document.getElementById('sNoInput').value.trim();
             const whatsapp = document.getElementById('whatsappInput').value.trim();
             const image = document.getElementById('imageUrlInput').value.trim();
+            const actionBtn = document.getElementById('actionBtn');
             
             if(!s_no || !whatsapp || !image) { 
-                alert("Please fill all fields and wait for image upload!");
+                actionBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> FILL ALL FIELDS OR WAIT ⚠️";
+                actionBtn.style.background = "#d29922";
+                setTimeout(() => {
+                    actionBtn.innerHTML = "<i class='fa-solid fa-plus'></i> ADD ENTRY";
+                    actionBtn.style.background = "#00ea77";
+                    actionBtn.style.color = "#000";
+                }, 2000);
                 return; 
             }
-
-            const actionBtn = document.getElementById('actionBtn');
 
             if(editIndex === null) {
                 fraudArray.push({ s_no, image, whatsapp });
@@ -462,12 +471,13 @@
                     throw new Error("Upload failed"); 
                 }
             } catch (error) {
-                uploadBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> FAILED ❌";
+                uploadBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> Internal error, try after some time";
                 uploadBtn.style.background = "#da3633";
-                alert("Internal error, try after some time");
+                uploadBtn.style.color = "#fff";
                 setTimeout(() => {
                     uploadBtn.innerHTML = "<i class='fa-solid fa-cloud-arrow-up'></i> UPLOAD TO SERVER";
                     uploadBtn.style.background = "#1f6feb";
+                    uploadBtn.style.color = "#fff";
                 }, 3000);
             }
         }
