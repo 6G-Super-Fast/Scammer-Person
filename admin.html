@@ -155,7 +155,7 @@
         <!-- File Upload Box (Supports Manual + Ctrl+V Paste) -->
         <div class="file-upload-box" id="dropZone">
             <i class="fa-solid fa-cloud-arrow-up" style="font-size: 24px; color: #00d4ff; margin-bottom: 5px;"></i>
-            <div id="uploadText" style="font-size: 13px; color: #8b949e;">Upload Photo Manual + Ctrl + V</div>
+            <div id="uploadText" style="font-size: 13px; color: #8b949e;">Click to browse OR Paste Screenshot (Ctrl + V)</div>
             <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">
             <img id="imagePreview" class="preview-img" alt="Preview">
         </div>
@@ -270,7 +270,6 @@
                 document.getElementById('editorSection').style.display = 'block';
                 autoSuggestSNo();
             } catch (error) {
-                alert("GitHub connection error! Check token permissions or internet.");
                 loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
             }
         }
@@ -318,8 +317,10 @@
             const image = document.getElementById('imageUrlInput').value.trim();
             
             if(!s_no || !whatsapp || !image) { 
-                return alert("S.No, WhatsApp URL aur Screenshot image teeno zaroori hain!"); 
+                return; 
             }
+
+            const actionBtn = document.getElementById('actionBtn');
 
             if(editIndex === null) {
                 fraudArray.push({ s_no, image, whatsapp });
@@ -327,7 +328,6 @@
                 fraudArray[editIndex] = { s_no, image, whatsapp };
                 editIndex = null;
                 document.getElementById('formTitle').innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> Add New Scammer Entry";
-                document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-plus'></i> ADD ENTRY";
                 document.getElementById('actionBtn').className = "btn-pro btn-green";
             }
 
@@ -341,7 +341,17 @@
 
             localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             autoSuggestSNo();
-            alert("Entry added locally! Now click 'UPLOAD TO GITHUB' to push live.");
+
+            // Button feedback without alert popup
+            actionBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> ADDED LOCALLY ✅";
+            actionBtn.style.background = "#00ea77";
+            actionBtn.style.color = "#000";
+
+            setTimeout(() => {
+                actionBtn.innerHTML = "<i class='fa-solid fa-plus'></i> ADD ENTRY";
+                actionBtn.style.background = "#00ea77";
+                actionBtn.style.color = "#000";
+            }, 2000);
         }
 
         function renderFraudList() {
@@ -391,17 +401,15 @@
         }
 
         function deleteFraud(index) {
-            if(confirm("Pakka delete karna hai ye record?")) {
-                fraudArray.splice(index, 1);
-                localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-                renderFraudList();
-                autoSuggestSNo();
-            }
+            fraudArray.splice(index, 1);
+            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+            renderFraudList();
+            autoSuggestSNo();
         }
 
         async function saveToGitHub() {
             const uploadBtn = document.querySelector('.btn-blue');
-            uploadBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> FETCHING SHA...";
+            uploadBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> UPLOADING...";
             uploadBtn.style.background = "#d29922";
 
             try {
@@ -413,8 +421,6 @@
                     const fileData = await getRes.json();
                     currentSha = fileData.sha;
                 }
-
-                uploadBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> UPLOADING...";
 
                 const updatedJson = JSON.stringify(fraudArray, null, 2);
                 const encodedContent = btoa(unescape(encodeURIComponent(updatedJson)));
@@ -430,7 +436,7 @@
                 });
 
                 if(response.ok) {
-                    uploadBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> UPLOAD SUCCESS ✅";
+                    uploadBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> UPLOAD DONE ✅";
                     uploadBtn.style.background = "#00ea77";
                     uploadBtn.style.color = "#000";
 
@@ -441,11 +447,9 @@
                     }, 3000);
 
                 } else { 
-                    const errData = await response.json();
-                    throw new Error(errData.message || "Upload failed"); 
+                    throw new Error("Upload failed"); 
                 }
             } catch (error) {
-                alert("Error: " + error.message);
                 uploadBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> FAILED ❌";
                 uploadBtn.style.background = "#da3633";
                 setTimeout(() => {
