@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard ⚡</title>
+    <title>Scammer Person - Admin Dashboard ⚡</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
@@ -110,9 +110,13 @@
             display: flex; justify-content: space-between; align-items: center; 
             margin-bottom: 12px; padding: 15px; 
             background: #0d1117; border-radius: 10px; border: 1px solid #30363d; 
-            text-align: left; transition: 0.3s ease;
+            text-align: left; cursor: grab; transition: 0.3s ease;
         }
         .list-item:hover { border-color: #8b949e; background: #161b22; }
+        .list-item:active { cursor: grabbing; }
+        .list-item.dragging { opacity: 0.4; background: #21262d; border: 1px dashed #00ea77; }
+        .list-item.drag-over { border-top: 3px solid #00d4ff; transform: scale(1.02); }
+        .drag-icon { margin-right: 15px; color: #8b949e; font-size: 16px; display: flex; align-items: center; }
         .icon-preview { width: 45px; height: 45px; object-fit: cover; margin-right: 12px; border-radius: 6px; border: 1px solid #30363d;}
 
         .modal { display: none; position: fixed; z-index: 999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px); align-items: center; justify-content: center; }
@@ -187,6 +191,7 @@
                 <h3><i class="fa-solid fa-list"></i> ALL SCAMMER RECORDS LIST</h3>
                 <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
+            <p class="subtitle" style="text-align: left; margin-top:-10px;">💡 Drag & Drop to reorder entries.</p>
             <div id="fraudListContainer"></div>
         </div>
     </div>
@@ -202,6 +207,7 @@
         let fraudArray = [];
         let editIndex = null; 
         let fileSha = "";
+        let dragStartIndex = null;
 
         window.addEventListener('DOMContentLoaded', () => {
             if (sessionStorage.getItem('isScammerAdminLoggedIn') === 'true') {
@@ -386,12 +392,13 @@
 
             fraudArray.forEach((item, index) => {
                 container.innerHTML += `
-                    <div class="list-item">
+                    <div class="list-item" draggable="true" data-index="${index}">
                         <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
+                            <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
                             <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
                             <div>
                                 <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
-                                <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;">${item.whatsapp}</div>
+                                <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 230px;">${item.whatsapp}</div>
                             </div>
                         </div>
                         <div class="action-btns">
@@ -400,6 +407,52 @@
                         </div>
                     </div>`;
             });
+            addDragAndDropListeners();
+        }
+
+        function addDragAndDropListeners() {
+            const draggables = document.querySelectorAll('.list-item');
+            draggables.forEach(draggable => {
+                draggable.addEventListener('dragstart', function(e) { 
+                    dragStartIndex = +this.getAttribute('data-index'); 
+                    this.classList.add('dragging'); 
+                });
+                draggable.addEventListener('dragover', function(e) { e.preventDefault(); });
+                draggable.addEventListener('dragenter', function(e) { e.preventDefault(); this.classList.add('drag-over'); });
+                draggable.addEventListener('dragleave', function() { this.classList.remove('drag-over'); });
+                draggable.addEventListener('drop', function() { 
+                    this.classList.remove('drag-over'); 
+                    const dragEndIndex = +this.getAttribute('data-index'); 
+                    swapItems(dragStartIndex, dragEndIndex); 
+                });
+                draggable.addEventListener('dragend', function() { this.classList.remove('dragging'); });
+            });
+        }
+
+        function swapItems(fromIndex, toIndex) {
+            const itemToMove = fraudArray.splice(fromIndex, 1)[0];
+            fraudArray.splice(toIndex, 0, itemToMove);
+            // Refresh list view with new order
+            const container = document.getElementById('fraudListContainer');
+            container.innerHTML = "";
+            fraudArray.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="list-item" draggable="true" data-index="${index}">
+                        <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
+                            <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
+                            <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
+                            <div>
+                                <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
+                                <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 230px;">${item.whatsapp}</div>
+                            </div>
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-edit" onclick="editFraud(${index})"><i class="fa-solid fa-pen"></i></button>
+                            <button class="btn-delete" onclick="deleteFraud(${index})"><i class="fa-solid fa-trash-can"></i></button>
+                        </div>
+                    </div>`;
+            });
+            addDragAndDropListeners();
         }
 
         function editFraud(index) {
