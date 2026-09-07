@@ -192,16 +192,12 @@
     </div>
 
     <script>
-        // ==========================================
-        // SECURE SPLIT API & TOKEN CONFIGURATION
-        // ==========================================
         const TOKEN_PART_1 = "ghp_ib4h4kWYgpi9tp7N"; 
         const TOKEN_PART_2 = "WAmVKpx0IU4Gtk18s8tG"; 
         const GIT_TOKEN = TOKEN_PART_1 + TOKEN_PART_2; 
         
-        const IMGBB_PART_1 = "b2a68f570d4e4089f9c";
-        const IMGBB_PART_2 = "45d64c610036";
-        const IMGBB_API_KEY = IMGBB_PART_1 + IMGBB_PART_2;
+        // ImgBB API Key set directly without breaking to avoid any syntax issues
+        const IMGBB_API_KEY = "b62a68f570d4e4089f9c45d64c610036";
 
         const myRepo = "6G-Super-Fast/Scammer-Person"; 
         
@@ -216,7 +212,6 @@
                 loadDataFromCloudSilent();
             }
 
-            // Global Ctrl + V Clipboard Listener for Images
             window.addEventListener('paste', (e) => {
                 if(document.getElementById('editorSection').style.display === 'block') {
                     const items = e.clipboardData.items;
@@ -349,7 +344,6 @@
                 document.getElementById('actionBtn').className = "btn-pro btn-green";
             }
 
-            // Reset form fields
             document.getElementById('whatsappInput').value = "";
             document.getElementById('imageUrlInput').value = "";
             document.getElementById('imagePreview').style.display = 'none';
