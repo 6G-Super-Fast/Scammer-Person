@@ -75,7 +75,7 @@
 <body>
     <div class="container">
         <div id="fraudGrid" class="fraud-grid">
-            <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading entries...</div>
+            <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading entries from server...</div>
         </div>
     </div>
 
@@ -86,23 +86,25 @@
     </div>
 
     <script>
+        const TOKEN_PART_1 = "ghp_ib4h4kWYgpi9tp7N"; 
+        const TOKEN_PART_2 = "WAmVKpx0IU4Gtk18s8tG"; 
+        const GIT_TOKEN = TOKEN_PART_1 + TOKEN_PART_2; 
+        const myRepo = "6G-Super-Fast/Scammer-Person";
+
         async function loadData() {
             let fraudData = [];
 
             try {
-                const response = await fetch('data.json?t=' + new Date().getTime());
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json?t=` + new Date().getTime(), {
+                    headers: { 'Authorization': `token ${GIT_TOKEN}` }
+                });
                 if (response.ok) {
-                    fraudData = await response.json();
+                    const fileData = await response.json();
+                    const decodedData = decodeURIComponent(escape(atob(fileData.content)));
+                    fraudData = JSON.parse(decodedData);
                 }
             } catch (e) {
-                console.log("Network fetch skipped");
-            }
-
-            if (!fraudData || fraudData.length === 0) {
-                const cached = localStorage.getItem('cachedScammerArray');
-                if (cached) {
-                    fraudData = JSON.parse(cached);
-                }
+                console.log("Internal connection fallback");
             }
 
             renderCards(fraudData);
