@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraud Alert List</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background: #0f1319; color: #c9d1d9; min-height: 100vh; padding: 25px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        
+        .fraud-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        
+        .fraud-card { 
+            background: #161b22; 
+            border: 1px solid #30363d; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+        }
+        .fraud-card:hover { transform: translateY(-3px); border-color: #00d4ff; }
+        
+        .card-header { 
+            padding: 10px 15px; 
+            background: rgba(239, 68, 68, 0.1); 
+            border-bottom: 1px solid #30363d; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            font-weight: 600; 
+            color: #f85149; 
+        }
+        .s-no { background: #da3633; color: white; padding: 2px 8px; border-radius: 6px; font-size: 13px; }
+        
+        .card-img-container { width: 100%; height: 220px; background: #010409; overflow: hidden; cursor: pointer; }
+        .card-img-container img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+        .card-img-container:hover img { transform: scale(1.05); }
+        
+        .card-body { padding: 15px; }
+        .whatsapp-btn { 
+            display: flex; align-items: center; justify-content: center; gap: 8px; 
+            background: #2ea043; color: white; padding: 12px; 
+            border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;
+            transition: background 0.2s; box-shadow: 0 4px 12px rgba(46, 160, 67, 0.2);
+        }
+        .whatsapp-btn:hover { background: #238636; }
+        
+        .loading, .no-data { text-align: center; grid-column: 1 / -1; padding: 50px; color: #8b949e; font-size: 15px; }
+        
+        /* Modal for Image Preview */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); align-items: center; justify-content: center; padding: 20px; }
+        .modal img { max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 0 25px rgba(0,0,0,0.8); }
+        .modal-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="fraudGrid" class="fraud-grid">
+            <div class="loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading entries...</div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imgModal" class="modal" onclick="closeModal()">
+        <span class="modal-close">&times;</span>
+        <img id="modalImg" src="">
+    </div>
+
+    <script>
+        async function loadData() {
+            try {
+                const response = await fetch('data.json?t=' + new Date().getTime());
+                if (!response.ok) throw new Error("Failed to load");
+                const fraudData = await response.json();
+                renderCards(fraudData);
+            } catch (error) {
+                document.getElementById('fraudGrid').innerHTML = `<div class="no-data">No records found. Please add entries from Admin Panel.</div>`;
+            }
+        }
+
+        function renderCards(data) {
+            const grid = document.getElementById('fraudGrid');
+            if (!data || data.length === 0) {
+                grid.innerHTML = `<div class="no-data">No fraud entries available.</div>`;
+                return;
+            }
+
+            grid.innerHTML = data.map((item, index) => `
+                <div class="fraud-card">
+                    <div class="card-header">
+                        <span>Fraud Report</span>
+                        <span class="s-no">#S_NO. ${item.s_no || (index + 1)}</span>
+                    </div>
+                    <div class="card-img-container" onclick="openModal('${item.image}')">
+                        <img src="${item.image}" alt="Screenshot" onerror="this.src='https://via.placeholder.com/300x220?text=Image+Not+Found'">
+                    </div>
+                    <div class="card-body">
+                        <a href="${item.whatsapp}" target="_blank" class="whatsapp-btn">
+                            <i class="fa-brands fa-whatsapp fa-lg"></i> Open WhatsApp Link
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openModal(src) {
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imgModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('imgModal').style.display = 'none';
+        }
+
+        window.onload = loadData;
+    </script>
+</body>
+</html>
