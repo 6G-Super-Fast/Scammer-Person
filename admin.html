@@ -201,13 +201,28 @@
         
         const myRepo = "6G-Super-Fast/Scammer-Person"; 
         
+        // Default fallback data agar localStorage ya network na chale
+        let defaultData = [
+            {
+                "s_no": "1",
+                "image": "https://via.placeholder.com/300x220?text=Fraud+Alert+1",
+                "whatsapp": "https://wa.me/"
+            }
+        ];
+
         let fraudArray = [];
         let editIndex = null; 
         let base64Image = "";
 
         // Check login state on page load
         window.addEventListener('DOMContentLoaded', () => {
-            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+            const cached = localStorage.getItem('cachedScammerArray');
+            if (cached) {
+                fraudArray = JSON.parse(cached);
+            } else {
+                fraudArray = defaultData;
+                localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+            }
 
             if (localStorage.getItem('isScammerAdminLoggedIn') === 'true') {
                 document.getElementById('loginSection').style.display = 'none';
@@ -239,12 +254,15 @@
                 if(response.ok) {
                     const data = await response.json();
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    fraudArray = JSON.parse(decodedData);
-                    localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-                    autoSuggestSNo();
+                    const netArray = JSON.parse(decodedData);
+                    if(netArray && netArray.length > 0) {
+                        fraudArray = netArray;
+                        localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
+                        autoSuggestSNo();
+                    }
                 }
             } catch (error) {
-                console.log("Background sync fallback active.");
+                console.log("Using offline cache fallback.");
             }
         }
 
@@ -260,22 +278,26 @@
                 if(response.ok) {
                     const data = await response.json();
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
-                    fraudArray = JSON.parse(decodedData);
+                    const netArray = JSON.parse(decodedData);
+                    if(netArray && netArray.length > 0) {
+                        fraudArray = netArray;
+                    }
                 }
             } catch (error) {
-                console.log("Offline connection fallback.");
+                console.log("Offline mode active.");
             }
             
             if(!fraudArray || fraudArray.length === 0) {
-                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
+                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(defaultData));
             }
-            
+
             localStorage.setItem('isScammerAdminLoggedIn', 'true');
             localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             
             document.getElementById('loginSection').style.display = 'none';
             document.getElementById('editorSection').style.display = 'block';
             autoSuggestSNo();
+            loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
         }
 
         function logoutAdmin() {
@@ -372,7 +394,7 @@
                 container.innerHTML += `
                     <div class="list-item">
                         <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
-                            <img src="${item.image}" class="icon-preview" alt="Img">
+                            <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
                             <div>
                                 <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
                                 <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;">${item.whatsapp}</div>
