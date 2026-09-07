@@ -139,7 +139,7 @@
         <h2><i class="fa-solid fa-shield-halved"></i> Scammer Admin Portal</h2>
         <p class="subtitle">Secure Control Room for Scammer List</p>
         
-        <button class="btn-pro btn-green" style="margin-top: 15px;" onclick="loadData()">
+        <button class="btn-pro btn-green" style="margin-top: 15px;" onclick="loadDataFromCloud()">
             <i class="fa-solid fa-right-to-bracket"></i> ENTER ADMIN PANEL
         </button>
     </div>
@@ -192,9 +192,6 @@
     </div>
 
     <script>
-        // ==========================================
-        // API & REPOSITORY CONFIGURATION
-        // ==========================================
         const TOKEN_PART_1 = "ghp_ib4h4kWYgpi9tp7N"; 
         const TOKEN_PART_2 = "WAmVKpx0IU4Gtk18s8tG"; 
         const GIT_TOKEN = TOKEN_PART_1 + TOKEN_PART_2; 
@@ -204,15 +201,14 @@
         
         let fraudArray = [];
         let editIndex = null; 
+        let fileSha = "";
 
         window.addEventListener('DOMContentLoaded', () => {
-            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
-
-            if (localStorage.getItem('isScammerAdminLoggedIn') === 'true') {
+            // Check if admin was logged in during this session
+            if (sessionStorage.getItem('isScammerAdminLoggedIn') === 'true') {
                 document.getElementById('loginSection').style.display = 'none';
                 document.getElementById('editorSection').style.display = 'block';
-                autoSuggestSNo();
-                loadDataSilent();
+                loadDataFromCloudSilent();
             }
 
             // Global Ctrl + V Clipboard Listener for Images
@@ -230,55 +226,54 @@
             });
         });
 
-        async function loadDataSilent() {
+        // Hamesha direct server se data uthayega (No local cache dependency)
+        async function loadDataFromCloudSilent() {
             try {
-                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json?t=` + new Date().getTime(), {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
                 if(response.ok) {
                     const data = await response.json();
+                    fileSha = data.sha;
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
                     fraudArray = JSON.parse(decodedData);
-                    localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
                     autoSuggestSNo();
                 }
             } catch (error) {
-                console.log("Background sync fallback active.");
+                console.log("Sync check error");
             }
         }
 
-        async function loadData() {
+        async function loadDataFromCloud() {
             const loginBtn = document.querySelector('#loginSection .btn-green');
             loginBtn.innerHTML = "<i class='fa-solid fa-spinner fa-spin'></i> CONNECTING...";
 
             try {
-                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
+                const response = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json?t=` + new Date().getTime(), {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
                 
                 if(response.ok) {
                     const data = await response.json();
+                    fileSha = data.sha;
                     const decodedData = decodeURIComponent(escape(atob(data.content)));
                     fraudArray = JSON.parse(decodedData);
+                    
+                    sessionStorage.setItem('isScammerAdminLoggedIn', 'true');
+                    document.getElementById('loginSection').style.display = 'none';
+                    document.getElementById('editorSection').style.display = 'block';
+                    autoSuggestSNo();
+                } else {
+                    throw new Error("Failed");
                 }
             } catch (error) {
-                console.log("Offline connection fallback.");
+                alert("Internal error, try after some time");
+                loginBtn.innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
             }
-            
-            if(!fraudArray || fraudArray.length === 0) {
-                fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || '[]');
-            }
-            
-            localStorage.setItem('isScammerAdminLoggedIn', 'true');
-            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
-            
-            document.getElementById('loginSection').style.display = 'none';
-            document.getElementById('editorSection').style.display = 'block';
-            autoSuggestSNo();
         }
 
         function logoutAdmin() {
-            localStorage.removeItem('isScammerAdminLoggedIn');
+            sessionStorage.removeItem('isScammerAdminLoggedIn');
             document.getElementById('editorSection').style.display = 'none';
             document.getElementById('loginSection').style.display = 'block';
             document.querySelector('#loginSection .btn-green').innerHTML = "<i class='fa-solid fa-right-to-bracket'></i> ENTER ADMIN PANEL";
@@ -291,7 +286,6 @@
             }
         }
 
-        // ImgBB Upload Functionality
         async function uploadToImgBB(file) {
             document.getElementById('uploadText').innerText = "Uploading to Cloud... ⏳";
             
@@ -330,7 +324,7 @@
             }
         }
 
-        function processFraudEntry() {
+        async function processFraudEntry() {
             const s_no = document.getElementById('sNoInput').value.trim();
             const whatsapp = document.getElementById('whatsappInput').value.trim();
             const image = document.getElementById('imageUrlInput').value.trim();
@@ -358,10 +352,9 @@
             document.getElementById('imageInput').value = "";
             document.getElementById('uploadText').innerText = "Click to browse OR Paste Screenshot (Ctrl + V)";
 
-            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             autoSuggestSNo();
 
-            actionBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> ADDED LOCALLY ✅";
+            actionBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> ADDED TO ARRAY ✅";
             actionBtn.style.background = "#00ea77";
             actionBtn.style.color = "#000";
 
@@ -372,12 +365,14 @@
             }, 2000);
         }
 
-        function renderFraudList() {
+        async function renderFraudList() {
             const container = document.getElementById('fraudListContainer');
-            container.innerHTML = "";
+            container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live records...</div>';
             
-            fraudArray = JSON.parse(localStorage.getItem('cachedScammerArray') || JSON.stringify(fraudArray));
+            // Modal khulte hi live server se latest data fetch karega
+            await loadDataFromCloudSilent();
 
+            container.innerHTML = "";
             if (!fraudArray || fraudArray.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 30px;">No records found.</div>';
                 return;
@@ -387,7 +382,7 @@
                 container.innerHTML += `
                     <div class="list-item">
                         <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
-                            <img src="${item.image}" class="icon-preview" alt="Img">
+                            <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
                             <div>
                                 <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
                                 <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px;">${item.whatsapp}</div>
@@ -415,13 +410,12 @@
             
             document.getElementById('formTitle').innerHTML = `<i class='fa-solid fa-pen-to-square'></i> Edit Entry #${item.s_no}`;
             document.getElementById('actionBtn').innerHTML = "<i class='fa-solid fa-check-double'></i> UPDATE ENTRY";
-            document.getElementById('actionBtn').className = "btn-pro btn-yellow";
+            document.getElementById('action_btn').className = "btn-pro btn-yellow";
             closeModal(); 
         }
 
-        function deleteFraud(index) {
+        async function deleteFraud(index) {
             fraudArray.splice(index, 1);
-            localStorage.setItem('cachedScammerArray', JSON.stringify(fraudArray));
             renderFraudList();
             autoSuggestSNo();
         }
@@ -432,13 +426,13 @@
             uploadBtn.style.background = "#d29922";
 
             try {
-                let currentSha = "";
-                const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json`, {
+                // Get latest SHA before pushing to avoid conflicts
+                const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json?t=` + new Date().getTime(), {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
                 if (getRes.ok) {
                     const fileData = await getRes.json();
-                    currentSha = fileData.sha;
+                    fileSha = fileData.sha;
                 }
 
                 const updatedJson = JSON.stringify(fraudArray, null, 2);
@@ -450,11 +444,14 @@
                     body: JSON.stringify({ 
                         message: "Update entries via Admin Panel", 
                         content: encodedContent, 
-                        sha: currentSha ? currentSha : undefined 
+                        sha: fileSha ? fileSha : undefined 
                     })
                 });
 
                 if(response.ok) {
+                    const resData = await response.json();
+                    fileSha = resData.content.sha;
+                    
                     uploadBtn.innerHTML = "<i class='fa-solid fa-circle-check'></i> UPLOAD DONE ✅";
                     uploadBtn.style.background = "#00ea77";
                     uploadBtn.style.color = "#000";
