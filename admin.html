@@ -191,7 +191,7 @@
                 <h3><i class="fa-solid fa-list"></i> ALL SCAMMER RECORDS LIST</h3>
                 <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <p class="subtitle" style="text-align: left; margin-top:-10px;">💡 Drag & Drop to reorder entries.</p>
+            <p class="subtitle" style="text-align: left; margin-top:-10px;">💡 Drag & Drop to reorder entries. Numbers auto-update!</p>
             <div id="fraudListContainer"></div>
         </div>
     </div>
@@ -383,6 +383,7 @@
             container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live records...</div>';
             
             await loadDataFromCloudSilent();
+            updateSerialNumbers();
 
             container.innerHTML = "";
             if (!fraudArray || fraudArray.length === 0) {
@@ -397,7 +398,7 @@
                             <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
                             <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
                             <div>
-                                <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
+                                <strong style="color: #00ea77; font-size: 14px;"># ${item.s_no}</strong>
                                 <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 230px;">${item.whatsapp}</div>
                             </div>
                         </div>
@@ -408,6 +409,12 @@
                     </div>`;
             });
             addDragAndDropListeners();
+        }
+
+        function updateSerialNumbers() {
+            fraudArray.forEach((item, idx) => {
+                item.s_no = (idx + 1).toString();
+            });
         }
 
         function addDragAndDropListeners() {
@@ -432,7 +439,8 @@
         function swapItems(fromIndex, toIndex) {
             const itemToMove = fraudArray.splice(fromIndex, 1)[0];
             fraudArray.splice(toIndex, 0, itemToMove);
-            // Refresh list view with new order
+            updateSerialNumbers();
+            
             const container = document.getElementById('fraudListContainer');
             container.innerHTML = "";
             fraudArray.forEach((item, index) => {
@@ -442,7 +450,7 @@
                             <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
                             <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
                             <div>
-                                <strong style="color: #00ea77; font-size: 14px;">#S_NO. ${item.s_no}</strong>
+                                <strong style="color: #00ea77; font-size: 14px;"># ${item.s_no}</strong>
                                 <div style="font-size: 12px; color: #8b949e; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 230px;">${item.whatsapp}</div>
                             </div>
                         </div>
@@ -475,6 +483,7 @@
 
         async function deleteFraud(index) {
             fraudArray.splice(index, 1);
+            updateSerialNumbers();
             renderFraudList();
             autoSuggestSNo();
         }
@@ -485,6 +494,9 @@
             uploadBtn.style.background = "#d29922";
 
             try {
+                // Update numbers once before saving to ensure sequence is 1, 2, 3...
+                updateSerialNumbers();
+
                 const getRes = await fetch(`https://api.github.com/repos/${myRepo}/contents/data.json?t=` + new Date().getTime(), {
                     headers: { 'Authorization': `token ${GIT_TOKEN}` }
                 });
@@ -500,7 +512,7 @@
                     method: 'PUT',
                     headers: { 'Authorization': `token ${GIT_TOKEN}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                        message: "Update entries via Admin Panel", 
+                        message: "Update entries & auto-sequence via Admin Panel", 
                         content: encodedContent, 
                         sha: fileSha ? fileSha : undefined 
                     })
