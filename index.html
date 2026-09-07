@@ -38,7 +38,6 @@
         }
         .s-no { background: #da3633; color: white; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
         
-        /* Updated for full image view without cropping */
         .card-img-container { 
             width: 100%; 
             height: 250px; 
@@ -53,7 +52,7 @@
         .card-img-container img { 
             width: 100%; 
             height: 100%; 
-            object-fit: contain; /* Yeh image ko bina kate pura fit karega */
+            object-fit: contain; 
             transition: transform 0.3s; 
         }
         .card-img-container:hover img { transform: scale(1.03); }
@@ -93,14 +92,20 @@
             let fraudData = [];
 
             try {
-                const response = await fetch('data.json?t=' + new Date().getTime());
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000); // 4 seconds timeout limit
+
+                const response = await fetch('data.json?t=' + new Date().getTime(), { signal: controller.signal });
+                clearTimeout(timeoutId);
+
                 if (response.ok) {
                     fraudData = await response.json();
                 }
             } catch (e) {
-                console.log("Network fetch skipped");
+                console.log("Network fetch timeout or offline mode, falling back to cache.");
             }
 
+            // Fallback to localStorage cache if fetch fails or returns empty
             if (!fraudData || fraudData.length === 0) {
                 const cached = localStorage.getItem('cachedScammerArray');
                 if (cached) {
@@ -136,7 +141,7 @@
             `).join('');
         }
 
-        fn openModal(src) {
+        function openModal(src) {
             document.getElementById('modalImg').src = src;
             document.getElementById('imgModal').style.display = 'flex';
         }
