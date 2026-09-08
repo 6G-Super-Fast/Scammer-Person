@@ -91,8 +91,10 @@
   },
   {
     "s_no": "18",
-    "image": "https://i.ibb.co/Hpb1sr7z/image.png",
-    "whatsapp": "https://wa.me//+917298160539"
+    "image": "https://i.ibb.co/d0WXrPJh/image.png",
+    "whatsapp": [
+      "https://wa.me//+917298160539"
+    ]
   },
   {
     "s_no": "19",
