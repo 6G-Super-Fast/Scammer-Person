@@ -57,16 +57,17 @@
         
         .card-body { padding: 15px; background: #161b22; }
         
-        /* Clean Single Link Button (Flat & Shadow-free) */
+        /* Single Number Normal Button */
         .whatsapp-btn { 
-            display: flex; align-items: center; justify-content: center; 
+            display: flex; align-items: center; justify-content: center; gap: 8px; 
             background: #2ea043; color: white; padding: 14px; 
-            border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 15px;
-            transition: background 0.2s; width: 100%; letter-spacing: 0.5px;
+            border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;
+            transition: background 0.2s; box-shadow: 0 4px 12px rgba(46, 160, 67, 0.2);
+            width: 100%;
         }
         .whatsapp-btn:hover { background: #238636; }
         
-        /* Clean Multi-Number Split Grid (Flat & Shadow-free) */
+        /* Multi-Number Split LINK Grid (Flat & Shadow-free) */
         .whatsapp-grid-container {
             background: #2ea043;
             border-radius: 8px;
@@ -146,6 +147,7 @@
                 let sNo = item.s_no || (index + 1);
                 let actionHtml = "";
 
+                // Check if whatsapp has multiple links
                 if (Array.isArray(item.whatsapp) && item.whatsapp.length > 1) {
                     let buttonsHtml = "";
                     item.whatsapp.forEach((link, idx) => {
@@ -160,7 +162,7 @@
                     let singleLink = Array.isArray(item.whatsapp) ? item.whatsapp[0] : item.whatsapp;
                     actionHtml = `
                         <a href="${singleLink}" target="_blank" class="whatsapp-btn">
-                            LINK
+                            <i class="fa-brands fa-whatsapp fa-lg"></i> Open WhatsApp Link
                         </a>
                     `;
                 }
