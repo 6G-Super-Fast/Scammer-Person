@@ -146,8 +146,10 @@
   },
   {
     "s_no": "30",
-    "image": "https://i.ibb.co/0Rxk2gWh/image.png",
-    "whatsapp": "http://wa.me//918750174655"
+    "image": "https://i.ibb.co/Kz5BVjPj/image.png",
+    "whatsapp": [
+      "http://wa.me//918750174655"
+    ]
   },
   {
     "s_no": "31",
