@@ -56,13 +56,52 @@
         .card-img-container:hover img { transform: scale(1.02); }
         
         .card-body { padding: 15px; background: #161b22; }
+        
         .whatsapp-btn { 
             display: flex; align-items: center; justify-content: center; gap: 8px; 
             background: #2ea043; color: white; padding: 12px; 
             border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;
             transition: background 0.2s; box-shadow: 0 4px 12px rgba(46, 160, 67, 0.2);
+            width: 100%;
         }
         .whatsapp-btn:hover { background: #238636; }
+
+        /* Multi-Number Grid Strip Styles */
+        .whatsapp-grid-container {
+            background: #2ea043;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(46, 160, 67, 0.2);
+            display: flex;
+            flex-direction: column;
+        }
+        .whatsapp-grid-title {
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            padding: 4px 0 2px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            background: rgba(0,0,0,0.15);
+        }
+        .whatsapp-grid-buttons {
+            display: flex;
+            width: 100%;
+        }
+        .wa-grid-btn {
+            flex: 1;
+            color: white;
+            padding: 10px 0;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 14px;
+            text-align: center;
+            border-right: 1px solid rgba(255,255,255,0.3);
+            transition: background 0.2s;
+        }
+        .wa-grid-btn:last-child { border-right: none; }
+        .wa-grid-btn:hover { background: rgba(0,0,0,0.2); }
         
         .loading, .no-data { text-align: center; grid-column: 1 / -1; padding: 50px; color: #8b949e; font-size: 15px; }
         
@@ -117,22 +156,46 @@
                 return;
             }
 
-            grid.innerHTML = data.map((item, index) => `
-                <div class="fraud-card">
-                    <div class="card-header">
-                        <span>Fraud Alert ⚠️</span>
-                        <span class="s-no"># ${item.s_no || (index + 1)}</span>
-                    </div>
-                    <div class="card-img-container" onclick="openModal('${item.image}')">
-                        <img src="${item.image}" alt="Screenshot" onerror="this.src='https://via.placeholder.com/300x220?text=Image+Not+Found'">
-                    </div>
-                    <div class="card-body">
-                        <a href="${item.whatsapp}" target="_blank" class="whatsapp-btn">
+            grid.innerHTML = data.map((item, index) => {
+                let sNo = item.s_no || (index + 1);
+                let actionHtml = "";
+
+                // Check if item.whatsapp is an array or a single string (for backward compatibility)
+                if (Array.isArray(item.whatsapp) && item.whatsapp.length > 1) {
+                    let buttonsHtml = "";
+                    item.whatsapp.forEach((link, idx) => {
+                        buttonsHtml += `<a href="${link}" target="_blank" class="wa-grid-btn" title="Number ${idx + 1}">${idx + 1}</a>`;
+                    });
+                    actionHtml = `
+                        <div class="whatsapp-grid-container">
+                            <div class="whatsapp-grid-title"><i class="fa-brands fa-whatsapp"></i> WhatsApp Numbers (${item.whatsapp.length})</div>
+                            <div class="whatsapp-grid-buttons">${buttonsHtml}</div>
+                        </div>
+                    `;
+                } else {
+                    let singleLink = Array.isArray(item.whatsapp) ? item.whatsapp[0] : item.whatsapp;
+                    actionHtml = `
+                        <a href="${singleLink}" target="_blank" class="whatsapp-btn">
                             <i class="fa-brands fa-whatsapp fa-lg"></i> Open WhatsApp Link
                         </a>
+                    `;
+                }
+
+                return `
+                    <div class="fraud-card">
+                        <div class="card-header">
+                            <span>Fraud Alert ⚠️</span>
+                            <span class="s-no"># ${sNo}</span>
+                        </div>
+                        <div class="card-img-container" onclick="openModal('${item.image}')">
+                            <img src="${item.image}" alt="Screenshot" onerror="this.src='https://via.placeholder.com/300x220?text=Image+Not+Found'">
+                        </div>
+                        <div class="card-body">
+                            ${actionHtml}
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         function openModal(src) {
