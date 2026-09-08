@@ -203,8 +203,10 @@
   },
   {
     "s_no": "40",
-    "image": "https://i.ibb.co/1YzrS3xk/image.png",
-    "whatsapp": "https://Wa.me//+917877755062"
+    "image": "https://i.ibb.co/CDgDqbk/image.png",
+    "whatsapp": [
+      "https://Wa.me//+917877755062"
+    ]
   },
   {
     "s_no": "41",
