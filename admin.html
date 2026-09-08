@@ -66,12 +66,28 @@
         .btn-remove-link { background: #da3633; color: #fff; border: none; border-radius: 8px; width: 45px; height: 48px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
         .btn-remove-link:hover { background: #f85149; }
 
+        /* Updated Add More Button Style (Black & Matching with Form) */
         .btn-add-more { 
-            background: #21262d; color: #00d4ff; border: 1px dashed #00d4ff; 
-            padding: 10px; border-radius: 8px; width: 100%; cursor: pointer; 
-            font-weight: 600; font-size: 13px; margin-bottom: 15px; transition: 0.3s;
+            background: #010409; 
+            color: #00d4ff; 
+            border: 1px solid #30363d; 
+            padding: 14px; 
+            border-radius: 10px; 
+            width: 100%; 
+            cursor: pointer; 
+            font-weight: 600; 
+            font-size: 13px; 
+            margin-bottom: 15px; 
+            transition: 0.3s;
+            font-family: 'Poppins', sans-serif;
+            letter-spacing: 0.5px;
         }
-        .btn-add-more:hover { background: #161b22; border-color: #00ea77; color: #00ea77; }
+        .btn-add-more:hover { 
+            background: #080d16; 
+            border-color: #00d4ff; 
+            color: #00ea77; 
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.15);
+        }
 
         .file-upload-box {
             position: relative;
@@ -397,7 +413,6 @@
                 document.getElementById('actionBtn').className = "btn-pro btn-green";
             }
 
-            // Reset fields
             document.getElementById('whatsappFieldsContainer').innerHTML = `
                 <div class="whatsapp-group">
                     <input type="url" class="input-pro whatsapp-input" placeholder="WhatsApp URL (https://wa.me/...)">
@@ -514,7 +529,6 @@
             document.getElementById('sNoInput').value = item.s_no || "";
             document.getElementById('imageUrlInput').value = item.image || "";
             
-            // Populate WhatsApp Links
             const container = document.getElementById('whatsappFieldsContainer');
             container.innerHTML = "";
             let links = Array.isArray(item.whatsapp) ? item.whatsapp : [item.whatsapp];
