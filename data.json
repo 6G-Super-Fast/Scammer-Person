@@ -9,7 +9,10 @@
   {
     "s_no": "2",
     "image": "https://i.ibb.co/dwJNDX4g/image.png",
-    "whatsapp": "http://wa.me//+917564956840"
+    "whatsapp": [
+      "http://wa.me//+917564956840",
+      "http://wa.me//+919204624679"
+    ]
   },
   {
     "s_no": "3",
