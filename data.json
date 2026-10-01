@@ -81,8 +81,10 @@
   },
   {
     "s_no": "17",
-    "image": "https://i.ibb.co/Hpb1sr7z/image.png",
-    "whatsapp": "https://wa.me//+917298160539"
+    "image": "https://i.ibb.co/p6wZwFdt/image.png",
+    "whatsapp": [
+      "https://wa.me//+917298160539"
+    ]
   },
   {
     "s_no": "18",
