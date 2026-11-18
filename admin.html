@@ -267,6 +267,7 @@
         let editIndex = null; 
         let fileSha = "";
         let dragStartIndex = null;
+        let isMoving = false; // Prevents double-trigger between Enter and Blur
 
         function autoFormatWhatsApp(input) {
             let val = input.value.trim();
@@ -522,7 +523,7 @@
                             </div>
                         </div>
                         <div class="action-btns">
-                            <input type="number" class="pos-input" min="1" max="${fraudArray.length}" value="${item.s_no}" title="Type S.No. & press Enter" onchange="moveToPosition(${index}, this.value)" onkeydown="if(event.key==='Enter'){ event.preventDefault(); moveToPosition(${index}, this.value); }">
+                            <input type="number" class="pos-input" min="1" max="${fraudArray.length}" value="${item.s_no}" title="Type S.No. & press Enter" onblur="moveToPosition(${index}, this.value)" onkeydown="if(event.key==='Enter'){ event.preventDefault(); moveToPosition(${index}, this.value); }">
                             <button class="btn-edit" onclick="editFraud(${index})"><i class="fa-solid fa-pen"></i></button>
                             <button class="btn-delete" onclick="deleteFraud(${index})"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
@@ -530,7 +531,6 @@
             });
             addDragAndDropListeners();
 
-            // Automatically scroll to the moved item & highlight it
             if (highlightIndex !== null) {
                 const movedEl = container.querySelector(`.list-item[data-index="${highlightIndex}"]`);
                 if (movedEl) {
@@ -552,26 +552,33 @@
         }
 
         function moveToPosition(fromIndex, newPosStr) {
-            let newPos = parseInt(newPosStr, 10);
-            if (isNaN(newPos)) {
-                drawFraudListDOM();
-                return;
-            }
-            if (newPos < 1) newPos = 1;
-            if (newPos > fraudArray.length) newPos = fraudArray.length;
+            if (isMoving) return; // Prevent double firing
+            isMoving = true;
 
-            const toIndex = newPos - 1;
-            if (fromIndex === toIndex) {
-                drawFraudListDOM();
-                return;
-            }
+            try {
+                let newPos = parseInt(newPosStr, 10);
+                if (isNaN(newPos)) {
+                    drawFraudListDOM();
+                    return;
+                }
+                if (newPos < 1) newPos = 1;
+                if (newPos > fraudArray.length) newPos = fraudArray.length;
 
-            // Remove from old position and insert at target position (pushes old #1 to #2)
-            const [itemToMove] = fraudArray.splice(fromIndex, 1);
-            fraudArray.splice(toIndex, 0, itemToMove);
-            
-            updateSerialNumbers();
-            drawFraudListDOM(toIndex);
+                const toIndex = newPos - 1;
+                if (fromIndex === toIndex) {
+                    drawFraudListDOM();
+                    return;
+                }
+
+                // Exact single shift: #85 -> #1, old #1 -> #2, old #2 -> #3
+                const [itemToMove] = fraudArray.splice(fromIndex, 1);
+                fraudArray.splice(toIndex, 0, itemToMove);
+                
+                updateSerialNumbers();
+                drawFraudListDOM(toIndex);
+            } finally {
+                setTimeout(() => { isMoving = false; }, 100);
+            }
         }
 
         function updateSerialNumbers() {
