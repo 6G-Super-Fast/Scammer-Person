@@ -66,7 +66,6 @@
         .btn-remove-link { background: #da3633; color: #fff; border: none; border-radius: 8px; width: 45px; height: 48px; cursor: pointer; transition: 0.3s; flex-shrink: 0; }
         .btn-remove-link:hover { background: #f85149; }
 
-        /* Updated Add More Button Style (Black & Matching with Form) */
         .btn-add-more { 
             background: #010409; 
             color: #00d4ff; 
@@ -125,14 +124,35 @@
         .btn-blue { background: #1f6feb; color: #fff; box-shadow: 0 4px 15px rgba(31, 111, 235, 0.2); margin-bottom: 0;}
         .btn-blue:hover { background: #388bfd; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(31, 111, 235, 0.4); }
 
+        .action-btns { display: flex; align-items: center; gap: 8px; }
         .action-btns button {
             padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer;
             font-weight: 600; font-size: 12px; transition: 0.3s; color: #fff;
         }
-        .btn-edit { background: #9e6a03; margin-right: 8px; }
+        .btn-edit { background: #9e6a03; }
         .btn-edit:hover { background: #d29922; }
         .btn-delete { background: #da3633; }
         .btn-delete:hover { background: #f85149; }
+
+        /* Direct Position Input Box inside View List */
+        .pos-input {
+            width: 56px;
+            padding: 6px 4px;
+            background: #010409;
+            color: #00ea77;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 13px;
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s;
+        }
+        .pos-input:focus {
+            border-color: #00d4ff;
+            outline: none;
+            box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+        }
 
         .list-item { 
             display: flex; justify-content: space-between; align-items: center; 
@@ -226,7 +246,7 @@
                 <h3><i class="fa-solid fa-list"></i> ALL SCAMMER RECORDS LIST</h3>
                 <button class="close-btn" onclick="closeModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <p class="subtitle" style="text-align: left; margin-top:-10px;">💡 Drag & Drop to reorder entries. Numbers auto-update!</p>
+            <p class="subtitle" style="text-align: left; margin-top:-10px;">💡 Type target S.No. in the box to move directly OR Drag & Drop!</p>
             <div id="fraudListContainer"></div>
         </div>
     </div>
@@ -244,29 +264,22 @@
         let fileSha = "";
         let dragStartIndex = null;
 
-        // Auto-convert typed/pasted phone number into https://wa.me//+...
         function autoFormatWhatsApp(input) {
             let val = input.value.trim();
             if (!val) return;
 
-            // Agar user URL erase karke sirf https://wa.me// chhod de, to field clear kar dein
             if (val === "https://wa.me//" || val === "https://wa.me/" || val === "https://wa.me") {
                 input.value = "";
                 return;
             }
 
-            // Agar pehle se valid http/https link hai to usko chhedenge nahi
             if (/^https?:\/\//i.test(val)) {
                 return;
             }
 
-            // Spaces, dashes, brackets hata kar clean number nikalenge
             let cleaned = val.replace(/[\s\-()]/g, '');
-
-            // Agar sirf '+' likha hai to wait karenge number type hone ka
             if (cleaned === "+") return;
 
-            // Agar number digits (aur optional '+') se bana hai to automatic link bana denge
             if (/^\+?\d+$/.test(cleaned)) {
                 if (!cleaned.startsWith('+')) {
                     cleaned = '+' + cleaned;
@@ -412,7 +425,7 @@
         }
 
         async function processFraudEntry() {
-            const s_no = document.getElementById('sNoInput').value.trim();
+            const s_no_input = document.getElementById('sNoInput').value.trim();
             const image = document.getElementById('imageUrlInput').value.trim();
             const actionBtn = document.getElementById('actionBtn');
             
@@ -425,7 +438,7 @@
                 }
             });
 
-            if(!s_no || whatsappLinks.length === 0 || !image) { 
+            if(!s_no_input || whatsappLinks.length === 0 || !image) { 
                 actionBtn.innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> FILL FIELDS & WAIT ⚠️";
                 actionBtn.style.background = "#d29922";
                 setTimeout(() => {
@@ -436,14 +449,29 @@
                 return; 
             }
 
+            let targetPos = parseInt(s_no_input, 10);
+
             if(editIndex === null) {
-                fraudArray.push({ s_no, image, whatsapp: whatsappLinks });
+                const newEntry = { s_no: s_no_input, image, whatsapp: whatsappLinks };
+                if (!isNaN(targetPos) && targetPos >= 1 && targetPos <= fraudArray.length) {
+                    fraudArray.splice(targetPos - 1, 0, newEntry);
+                } else {
+                    fraudArray.push(newEntry);
+                }
             } else {
-                fraudArray[editIndex] = { s_no, image, whatsapp: whatsappLinks };
+                const updatedEntry = { s_no: s_no_input, image, whatsapp: whatsappLinks };
+                fraudArray.splice(editIndex, 1);
+                if (!isNaN(targetPos) && targetPos >= 1 && targetPos <= fraudArray.length + 1) {
+                    fraudArray.splice(targetPos - 1, 0, updatedEntry);
+                } else {
+                    fraudArray.push(updatedEntry);
+                }
                 editIndex = null;
                 document.getElementById('formTitle').innerHTML = "<i class='fa-solid fa-triangle-exclamation'></i> Add New Scammer Entry";
                 document.getElementById('actionBtn').className = "btn-pro btn-green";
             }
+
+            updateSerialNumbers();
 
             document.getElementById('whatsappFieldsContainer').innerHTML = `
                 <div class="whatsapp-group">
@@ -468,13 +496,8 @@
             }, 2000);
         }
 
-        async function renderFraudList() {
+        function drawFraudListDOM() {
             const container = document.getElementById('fraudListContainer');
-            container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live records...</div>';
-            
-            await loadDataFromCloudSilent();
-            updateSerialNumbers();
-
             container.innerHTML = "";
             if (!fraudArray || fraudArray.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 30px;">No records found.</div>';
@@ -494,12 +517,43 @@
                             </div>
                         </div>
                         <div class="action-btns">
+                            <input type="number" class="pos-input" min="1" max="${fraudArray.length}" value="${item.s_no}" title="Type S.No. & press Enter" onchange="moveToPosition(${index}, this.value)" onkeydown="if(event.key==='Enter'){ this.blur(); }">
                             <button class="btn-edit" onclick="editFraud(${index})"><i class="fa-solid fa-pen"></i></button>
                             <button class="btn-delete" onclick="deleteFraud(${index})"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>`;
             });
             addDragAndDropListeners();
+        }
+
+        async function renderFraudList() {
+            const container = document.getElementById('fraudListContainer');
+            container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Fetching live records...</div>';
+            
+            await loadDataFromCloudSilent();
+            updateSerialNumbers();
+            drawFraudListDOM();
+        }
+
+        function moveToPosition(fromIndex, newPosStr) {
+            let newPos = parseInt(newPosStr, 10);
+            if (isNaN(newPos)) {
+                drawFraudListDOM();
+                return;
+            }
+            if (newPos < 1) newPos = 1;
+            if (newPos > fraudArray.length) newPos = fraudArray.length;
+
+            const toIndex = newPos - 1;
+            if (fromIndex === toIndex) {
+                drawFraudListDOM();
+                return;
+            }
+
+            const itemToMove = fraudArray.splice(fromIndex, 1)[0];
+            fraudArray.splice(toIndex, 0, itemToMove);
+            updateSerialNumbers();
+            drawFraudListDOM();
         }
 
         function updateSerialNumbers() {
@@ -531,28 +585,7 @@
             const itemToMove = fraudArray.splice(fromIndex, 1)[0];
             fraudArray.splice(toIndex, 0, itemToMove);
             updateSerialNumbers();
-            
-            const container = document.getElementById('fraudListContainer');
-            container.innerHTML = "";
-            fraudArray.forEach((item, index) => {
-                let linkCount = Array.isArray(item.whatsapp) ? item.whatsapp.length : 1;
-                container.innerHTML += `
-                    <div class="list-item" draggable="true" data-index="${index}">
-                        <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
-                            <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
-                            <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
-                            <div>
-                                <strong style="color: #00ea77; font-size: 14px;"># ${item.s_no}</strong>
-                                <div style="font-size: 12px; color: #8b949e;">Links: ${linkCount} WhatsApp Number(s)</div>
-                            </div>
-                        </div>
-                        <div class="action-btns">
-                            <button class="btn-edit" onclick="editFraud(${index})"><i class="fa-solid fa-pen"></i></button>
-                            <button class="btn-delete" onclick="deleteFraud(${index})"><i class="fa-solid fa-trash-can"></i></button>
-                        </div>
-                    </div>`;
-            });
-            addDragAndDropListeners();
+            drawFraudListDOM();
         }
 
         function editFraud(index) {
@@ -583,7 +616,7 @@
         async function deleteFraud(index) {
             fraudArray.splice(index, 1);
             updateSerialNumbers();
-            renderFraudList();
+            drawFraudListDOM();
             autoSuggestSNo();
         }
 
