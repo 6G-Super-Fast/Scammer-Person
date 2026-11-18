@@ -186,7 +186,7 @@
         <!-- Dynamic WhatsApp Links Container -->
         <div id="whatsappFieldsContainer">
             <div class="whatsapp-group">
-                <input type="url" class="input-pro whatsapp-input" placeholder="WhatsApp URL (https://wa.me/...)">
+                <input type="text" class="input-pro whatsapp-input" placeholder="Enter Number (+9122833556) or WhatsApp URL" oninput="autoFormatWhatsApp(this)">
             </div>
         </div>
         <button type="button" class="btn-add-more" onclick="addWhatsAppField()"><i class="fa-solid fa-plus"></i> ADD MORE LINK</button>
@@ -244,6 +244,37 @@
         let fileSha = "";
         let dragStartIndex = null;
 
+        // Auto-convert typed/pasted phone number into https://wa.me//+...
+        function autoFormatWhatsApp(input) {
+            let val = input.value.trim();
+            if (!val) return;
+
+            // Agar user URL erase karke sirf https://wa.me// chhod de, to field clear kar dein
+            if (val === "https://wa.me//" || val === "https://wa.me/" || val === "https://wa.me") {
+                input.value = "";
+                return;
+            }
+
+            // Agar pehle se valid http/https link hai to usko chhedenge nahi
+            if (/^https?:\/\//i.test(val)) {
+                return;
+            }
+
+            // Spaces, dashes, brackets hata kar clean number nikalenge
+            let cleaned = val.replace(/[\s\-()]/g, '');
+
+            // Agar sirf '+' likha hai to wait karenge number type hone ka
+            if (cleaned === "+") return;
+
+            // Agar number digits (aur optional '+') se bana hai to automatic link bana denge
+            if (/^\+?\d+$/.test(cleaned)) {
+                if (!cleaned.startsWith('+')) {
+                    cleaned = '+' + cleaned;
+                }
+                input.value = `https://wa.me//${cleaned}`;
+            }
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             if (sessionStorage.getItem('isScammerAdminLoggedIn') === 'true') {
                 document.getElementById('loginSection').style.display = 'none';
@@ -271,7 +302,7 @@
             div.className = 'whatsapp-group';
             div.style.marginTop = '10px';
             div.innerHTML = `
-                <input type="url" class="input-pro whatsapp-input" placeholder="WhatsApp URL (https://wa.me/...)" value="${value}">
+                <input type="text" class="input-pro whatsapp-input" placeholder="Enter Number (+9122833556) or WhatsApp URL" value="${value}" oninput="autoFormatWhatsApp(this)">
                 <button type="button" class="btn-remove-link" onclick="this.parentElement.remove()"><i class="fa-solid fa-trash"></i></button>
             `;
             container.appendChild(div);
@@ -388,6 +419,7 @@
             const whatsappInputs = document.querySelectorAll('.whatsapp-input');
             let whatsappLinks = [];
             whatsappInputs.forEach(input => {
+                autoFormatWhatsApp(input);
                 if(input.value.trim() !== "") {
                     whatsappLinks.push(input.value.trim());
                 }
@@ -415,7 +447,7 @@
 
             document.getElementById('whatsappFieldsContainer').innerHTML = `
                 <div class="whatsapp-group">
-                    <input type="url" class="input-pro whatsapp-input" placeholder="WhatsApp URL (https://wa.me/...)">
+                    <input type="text" class="input-pro whatsapp-input" placeholder="Enter Number (+9122833556) or WhatsApp URL" oninput="autoFormatWhatsApp(this)">
                 </div>
             `;
             document.getElementById('imageUrlInput').value = "";
