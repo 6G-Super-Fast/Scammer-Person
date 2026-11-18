@@ -163,11 +163,6 @@
         .list-item:active { cursor: grabbing; }
         .list-item.dragging { opacity: 0.4; background: #21262d; border: 1px dashed #00ea77; }
         .list-item.drag-over { border-top: 3px solid #00d4ff; transform: scale(1.02); }
-        .list-item.moved-highlight {
-            border-color: #00ea77;
-            background: #0f291e;
-            box-shadow: 0 0 15px rgba(0, 234, 119, 0.3);
-        }
         .drag-icon { margin-right: 15px; color: #8b949e; font-size: 16px; display: flex; align-items: center; }
         .icon-preview { width: 45px; height: 45px; object-fit: cover; margin-right: 12px; border-radius: 6px; border: 1px solid #30363d;}
 
@@ -181,7 +176,7 @@
         .close-btn { color: #da3633; font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; transition: 0.3s; }
         .close-btn:hover { color: #ff4757; transform: rotate(90deg); }
         
-        #fraudListContainer { overflow-y: auto; padding-right: 10px; flex-grow: 1; scroll-behavior: smooth; }
+        #fraudListContainer { overflow-y: auto; padding-right: 10px; flex-grow: 1; }
         ::-webkit-scrollbar { width: 8px; height: 8px;}
         ::-webkit-scrollbar-track { background: #010409; border-radius: 4px; }
         ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
@@ -267,7 +262,6 @@
         let editIndex = null; 
         let fileSha = "";
         let dragStartIndex = null;
-        let isMoving = false; // Prevents double-trigger between Enter and Blur
 
         function autoFormatWhatsApp(input) {
             let val = input.value.trim();
@@ -501,8 +495,10 @@
             }, 2000);
         }
 
-        function drawFraudListDOM(highlightIndex = null) {
+        function drawFraudListDOM() {
             const container = document.getElementById('fraudListContainer');
+            const currentScroll = container.scrollTop; // Keep exact scroll position without jumping
+            
             container.innerHTML = "";
             if (!fraudArray || fraudArray.length === 0) {
                 container.innerHTML = '<div style="text-align: center; color: #8b949e; padding: 30px;">No records found.</div>';
@@ -511,9 +507,8 @@
 
             fraudArray.forEach((item, index) => {
                 let linkCount = Array.isArray(item.whatsapp) ? item.whatsapp.length : 1;
-                let highlightClass = (index === highlightIndex) ? 'moved-highlight' : '';
                 container.innerHTML += `
-                    <div class="list-item ${highlightClass}" draggable="true" data-index="${index}">
+                    <div class="list-item" draggable="true" data-index="${index}">
                         <div style="display: flex; align-items: center; flex: 1; padding-right: 15px; overflow: hidden;">
                             <span class="drag-icon"><i class="fa-solid fa-grip-vertical"></i></span>
                             <img src="${item.image}" class="icon-preview" alt="Img" onerror="this.src='https://via.placeholder.com/45?text=No+Img'">
@@ -523,23 +518,14 @@
                             </div>
                         </div>
                         <div class="action-btns">
-                            <input type="number" class="pos-input" min="1" max="${fraudArray.length}" value="${item.s_no}" title="Type S.No. & press Enter" onblur="moveToPosition(${index}, this.value)" onkeydown="if(event.key==='Enter'){ event.preventDefault(); moveToPosition(${index}, this.value); }">
+                            <input type="number" class="pos-input" min="1" max="${fraudArray.length}" value="${item.s_no}" data-current="${item.s_no}" title="Type S.No. & press Enter" onchange="handlePosInput(this, ${index})" onkeydown="if(event.key==='Enter'){ event.preventDefault(); this.blur(); }">
                             <button class="btn-edit" onclick="editFraud(${index})"><i class="fa-solid fa-pen"></i></button>
                             <button class="btn-delete" onclick="deleteFraud(${index})"><i class="fa-solid fa-trash-can"></i></button>
                         </div>
                     </div>`;
             });
             addDragAndDropListeners();
-
-            if (highlightIndex !== null) {
-                const movedEl = container.querySelector(`.list-item[data-index="${highlightIndex}"]`);
-                if (movedEl) {
-                    movedEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setTimeout(() => {
-                        movedEl.classList.remove('moved-highlight');
-                    }, 1800);
-                }
-            }
+            container.scrollTop = currentScroll;
         }
 
         async function renderFraudList() {
@@ -551,34 +537,34 @@
             drawFraudListDOM();
         }
 
-        function moveToPosition(fromIndex, newPosStr) {
-            if (isMoving) return; // Prevent double firing
-            isMoving = true;
+        function handlePosInput(inputEl, fromIndex) {
+            if (inputEl.dataset.done === "1") return;
+            inputEl.dataset.done = "1";
 
-            try {
-                let newPos = parseInt(newPosStr, 10);
-                if (isNaN(newPos)) {
-                    drawFraudListDOM();
-                    return;
-                }
-                if (newPos < 1) newPos = 1;
-                if (newPos > fraudArray.length) newPos = fraudArray.length;
+            let newPos = parseInt(inputEl.value, 10);
+            let oldPos = parseInt(inputEl.dataset.current, 10);
 
-                const toIndex = newPos - 1;
-                if (fromIndex === toIndex) {
-                    drawFraudListDOM();
-                    return;
-                }
-
-                // Exact single shift: #85 -> #1, old #1 -> #2, old #2 -> #3
-                const [itemToMove] = fraudArray.splice(fromIndex, 1);
-                fraudArray.splice(toIndex, 0, itemToMove);
-                
-                updateSerialNumbers();
-                drawFraudListDOM(toIndex);
-            } finally {
-                setTimeout(() => { isMoving = false; }, 100);
+            if (isNaN(newPos) || newPos === oldPos) {
+                inputEl.value = oldPos;
+                inputEl.dataset.done = "0";
+                return;
             }
+
+            if (newPos < 1) newPos = 1;
+            if (newPos > fraudArray.length) newPos = fraudArray.length;
+
+            const toIndex = newPos - 1;
+            if (fromIndex === toIndex) {
+                drawFraudListDOM();
+                return;
+            }
+
+            // Moves item at fromIndex directly to toIndex (e.g. #84 -> #1, old #1 -> #2)
+            const [itemToMove] = fraudArray.splice(fromIndex, 1);
+            fraudArray.splice(toIndex, 0, itemToMove);
+            
+            updateSerialNumbers();
+            drawFraudListDOM();
         }
 
         function updateSerialNumbers() {
@@ -610,7 +596,7 @@
             const itemToMove = fraudArray.splice(fromIndex, 1)[0];
             fraudArray.splice(toIndex, 0, itemToMove);
             updateSerialNumbers();
-            drawFraudListDOM(toIndex);
+            drawFraudListDOM();
         }
 
         function editFraud(index) {
