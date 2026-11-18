@@ -272,6 +272,12 @@
                 return;
             }
 
+            // If user pasted wa.me//... without https://, auto-prepend https://
+            if (/^wa\.me\//i.test(val)) {
+                input.value = "https://" + val;
+                return;
+            }
+
             if (/^https?:\/\//i.test(val)) {
                 return;
             }
@@ -497,7 +503,7 @@
 
         function drawFraudListDOM() {
             const container = document.getElementById('fraudListContainer');
-            const currentScroll = container.scrollTop; // Keep exact scroll position without jumping
+            const currentScroll = container.scrollTop;
             
             container.innerHTML = "";
             if (!fraudArray || fraudArray.length === 0) {
@@ -559,7 +565,6 @@
                 return;
             }
 
-            // Moves item at fromIndex directly to toIndex (e.g. #84 -> #1, old #1 -> #2)
             const [itemToMove] = fraudArray.splice(fromIndex, 1);
             fraudArray.splice(toIndex, 0, itemToMove);
             
